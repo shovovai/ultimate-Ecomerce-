@@ -19,6 +19,7 @@ import { subscriptionType } from "./subscriptionType";
 import { storeSettingsType } from "./storeSettingsType";
 import { emailCampaignType } from "./emailCampaignType";
 import { couponType } from "./couponType";
+import { paymentSettingsType } from "./paymentSettingsType";
 
 export const schema: { types: SchemaTypeDefinition[] } = {
   types: [
@@ -41,5 +42,6 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     storeSettingsType,
     emailCampaignType,
     couponType,
+    paymentSettingsType,
   ],
 };

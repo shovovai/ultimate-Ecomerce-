@@ -12,6 +12,7 @@ export const ORDER_STATUSES = {
 // Payment status constants
 export const PAYMENT_STATUSES = {
   PENDING: "pending",
+  AWAITING_VERIFICATION: "awaiting_verification",
   PAID: "paid",
   FAILED: "failed",
   CANCELLED: "cancelled",
@@ -22,6 +23,9 @@ export const PAYMENT_METHODS = {
   CASH_ON_DELIVERY: "cash_on_delivery",
   STRIPE: "stripe",
   SSLCOMMERZ: "sslcommerz",
+  BKASH: "bkash",
+  NAGAD: "nagad",
+  MANUAL: "manual",
   /** @deprecated legacy simulated gateway — no longer accepted for new orders */
   CLERK: "clerk",
   CARD: "card",

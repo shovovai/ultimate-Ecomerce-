@@ -10,6 +10,7 @@ const isProtectedRoute = createRouteMatcher([
   "/settings(.*)",
   "/admin(.*)",
   "/employee(.*)",
+  "/studio(.*)",
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);

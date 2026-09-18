@@ -1,5 +1,5 @@
 import "server-only";
-import { getStripe } from "@/lib/stripe";
+import { getStripeClient } from "@/lib/stripe";
 import { backendClient } from "@/sanity/lib/backendClient";
 import { brand } from "@/config/brand";
 import { ORDER_STATUSES, PAYMENT_STATUSES } from "@/lib/orderStatus";
@@ -58,7 +58,7 @@ export async function loadPayableOrder(orderId: string, clerkUserId: string): Pr
  * (discounts, shipping and tax included). Returns the hosted payment URL.
  */
 export async function createStripeSessionForOrder(order: PayableOrder): Promise<string> {
-  const stripe = getStripe();
+  const stripe = await getStripeClient();
   const currency = (order.currency || "USD").toUpperCase();
   const unitAmount = ZERO_DECIMAL.has(currency)
     ? Math.round(order.totalPrice!)

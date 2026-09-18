@@ -117,6 +117,7 @@ export default function OrderSummary({
             muted
           />
           {pricing.tax > 0 && <Row label="Tax" value={formatPrice(pricing.tax)} muted />}
+          {pricing.paymentFee > 0 && <Row label="Payment fee" value={formatPrice(pricing.paymentFee)} muted />}
           <div className="border-t border-dashed border-border pt-4">
             <div className="flex items-end justify-between">
               <span className="font-semibold text-ink">Total</span>

@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { writeClient } from "@/sanity/lib/client";
-import stripe from "@/lib/stripe";
+import type Stripe from "stripe";
+import { getStripeClient } from "@/lib/stripe";
+
+// Assigned at the start of each request (keys come from Admin → Payments)
+let stripe: Stripe;
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
+    stripe = await getStripeClient({ requireEnabled: false });
     const user = await currentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

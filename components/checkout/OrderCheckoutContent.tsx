@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CreditCard, Loader2, MapPin, Package, Smartphone, type LucideIcon } from "lucide-react";
+import { Clock, Loader2, MapPin, Package } from "lucide-react";
 import { toast } from "sonner";
 import { image } from "@/sanity/image";
 import { formatPrice } from "@/lib/storeConfig";
-import { cn } from "@/lib/utils";
+import type { PaymentOption } from "@/lib/paymentConfig";
+import PaymentOptionPicker, { type ManualInput } from "@/components/checkout/PaymentOptionPicker";
 
 interface OrderProduct {
   product: {
@@ -34,29 +35,37 @@ interface Order {
   paymentStatus: string;
 }
 
-const METHODS: Record<string, { label: string; hint: string; icon: LucideIcon }> = {
-  sslcommerz: { label: "bKash, Nagad, Rocket & cards", hint: "via SSLCommerz", icon: Smartphone },
-  stripe: { label: "Credit / debit card", hint: "via Stripe", icon: CreditCard },
-};
-
 // Pay later for an order that was saved but not paid yet
 export function OrderCheckoutContent({
   order,
-  onlineMethods,
+  paymentOptions,
 }: {
   order: Order;
-  onlineMethods: string[];
+  paymentOptions: PaymentOption[];
 }) {
-  const methods = onlineMethods.filter((m) => METHODS[m]);
-  const [method, setMethod] = useState(methods[0] || "");
+  const [optionId, setOptionId] = useState(paymentOptions[0]?.id || "");
+  const [manual, setManual] = useState<ManualInput>({ senderNumber: "", transactionId: "" });
   const [busy, setBusy] = useState(false);
   const paid = order.paymentStatus === "paid";
+  const awaiting = order.paymentStatus === "awaiting_verification";
+  const selected = paymentOptions.find((o) => o.id === optionId);
 
   const pay = async () => {
-    if (!method) return;
+    if (!selected) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/checkout/${method}`, {
+      if (selected.kind === "manual") {
+        const res = await fetch(`/api/orders/${order._id}/manual-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accountId: selected.id.replace("manual:", ""), ...manual }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not submit payment");
+        window.location.href = `/success?order_id=${order._id}&payment_method=manual`;
+        return;
+      }
+      const res = await fetch(`/api/checkout/${selected.method}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: order._id }),
@@ -71,8 +80,8 @@ export function OrderCheckoutContent({
   };
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
-      <section className="rounded-3xl border border-border bg-white p-6">
+    <div className="grid items-start gap-8 lg:grid-cols-[1fr_420px]">
+      <section className="rounded-3xl border border-border bg-white p-6 lg:self-start">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="flex items-center gap-2 font-display text-2xl text-ink">
             <Package className="h-5 w-5 text-clay" /> Order {order.orderNumber}
@@ -134,40 +143,34 @@ export function OrderCheckoutContent({
 
         {paid ? (
           <p className="mt-6 rounded-2xl bg-sage/10 p-4 text-sm font-semibold text-sage">This order is already paid.</p>
-        ) : methods.length === 0 ? (
+        ) : awaiting ? (
+          <p className="mt-6 flex gap-2 rounded-2xl bg-marigold/15 p-4 text-sm text-ink">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-clay" />
+            We&apos;re verifying your payment. You&apos;ll get a notification once it&apos;s confirmed.
+          </p>
+        ) : paymentOptions.length === 0 ? (
           <p className="mt-6 rounded-2xl bg-sand p-4 text-sm text-light-color">
             Online payment isn&apos;t available right now. You can pay cash on delivery.
           </p>
         ) : (
           <>
-            <div className="mt-6 space-y-2">
-              {methods.map((m) => {
-                const info = METHODS[m];
-                return (
-                  <button
-                    key={m}
-                    onClick={() => setMethod(m)}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left",
-                      method === m ? "border-clay bg-clay/5" : "border-border"
-                    )}
-                  >
-                    <info.icon className="h-5 w-5 text-clay" />
-                    <span className="flex-1">
-                      <span className="block text-sm font-semibold">{info.label}</span>
-                      <span className="block text-xs text-light-color">{info.hint}</span>
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="mt-6">
+              <PaymentOptionPicker
+                options={paymentOptions}
+                selectedId={optionId}
+                onSelect={setOptionId}
+                amount={order.totalPrice}
+                manual={manual}
+                onManualChange={setManual}
+              />
             </div>
             <button
               onClick={pay}
-              disabled={busy || !method}
+              disabled={busy || !selected}
               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-clay text-sm font-semibold text-white hover:bg-clay-dark disabled:opacity-50"
             >
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              Pay {formatPrice(order.totalPrice)}
+              {selected?.kind === "manual" ? "Submit payment details" : `Pay ${formatPrice(order.totalPrice)}`}
             </button>
           </>
         )}

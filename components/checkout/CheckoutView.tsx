@@ -3,16 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import {
-  Banknote,
-  Check,
-  CreditCard,
-  Loader2,
-  MapPin,
-  Plus,
-  Smartphone,
-  type LucideIcon,
-} from "lucide-react";
+import { Check, Loader2, MapPin, Plus } from "lucide-react";
 import { toast } from "sonner";
 import useCartStore from "@/store";
 import { image } from "@/sanity/image";
@@ -22,6 +13,7 @@ import { AddAddressSidebar } from "@/components/cart/AddAddressSidebar";
 import EmptyCart from "@/components/EmptyCart";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import { useCheckoutQuote, useCouponCode } from "@/hooks/useCheckoutQuote";
+import PaymentOptionPicker, { type ManualInput } from "@/components/checkout/PaymentOptionPicker";
 
 interface Address {
   _id: string;
@@ -33,24 +25,6 @@ interface Address {
   phone?: string;
   default?: boolean;
 }
-
-const METHOD_INFO: Record<string, { label: string; hint: string; icon: LucideIcon }> = {
-  cash_on_delivery: {
-    label: "Cash on delivery",
-    hint: "Pay in cash when your order arrives",
-    icon: Banknote,
-  },
-  sslcommerz: {
-    label: "bKash, Nagad, Rocket & cards",
-    hint: "Secure payment via SSLCommerz",
-    icon: Smartphone,
-  },
-  stripe: {
-    label: "Credit / debit card",
-    hint: "Visa, Mastercard, Amex — secured by Stripe",
-    icon: CreditCard,
-  },
-};
 
 const Step = ({ n, title, children }: { n: number; title: string; children: React.ReactNode }) => (
   <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
@@ -68,14 +42,15 @@ export default function CheckoutView() {
   const { user, isLoaded } = useUser();
   const [mounted, setMounted] = useState(false);
   const [couponCode, setCouponCode] = useCouponCode();
-  const { items, pricing, paymentMethods, error, loading } = useCheckoutQuote(couponCode);
+  const [optionId, setOptionId] = useState<string>("");
+  const [manual, setManual] = useState<ManualInput>({ senderNumber: "", transactionId: "" });
+  const { items, pricing, paymentOptions, error, loading } = useCheckoutQuote(couponCode, optionId);
   const resetCart = useCartStore((s) => s.resetCart);
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [method, setMethod] = useState<string>("cash_on_delivery");
   const [placing, setPlacing] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -102,18 +77,29 @@ export default function CheckoutView() {
     if (isLoaded && user) loadAddresses();
   }, [isLoaded, user, loadAddresses]);
 
-  // Keep the chosen payment method valid when the available list arrives
+  // Keep the chosen payment option valid when the available list arrives
   useEffect(() => {
-    if (paymentMethods.length && !paymentMethods.includes(method)) {
-      setMethod(paymentMethods[0]);
+    if (paymentOptions.length && !paymentOptions.some((o) => o.id === optionId)) {
+      setOptionId(paymentOptions[0].id);
     }
-  }, [paymentMethods, method]);
+  }, [paymentOptions, optionId]);
+
+  const selectedOption = paymentOptions.find((o) => o.id === optionId);
+  const method = selectedOption?.method || "";
 
   const selectedAddress = addresses.find((a) => a._id === selectedAddressId) || null;
 
   const placeOrder = async () => {
     if (!selectedAddress) {
       toast.error("Please choose a delivery address");
+      return;
+    }
+    if (!selectedOption) {
+      toast.error("Please choose a payment method");
+      return;
+    }
+    if (selectedOption.kind === "manual" && (!manual.senderNumber.trim() || !manual.transactionId.trim())) {
+      toast.error("Enter your number and the transaction ID after sending the money");
       return;
     }
     setPlacing(true);
@@ -124,8 +110,9 @@ export default function CheckoutView() {
         body: JSON.stringify({
           items: items.map((i) => ({ productId: i.product._id, quantity: i.quantity })),
           shippingAddress: selectedAddress,
-          paymentMethod: method,
+          paymentOptionId: selectedOption.id,
           couponCode: pricing?.coupon?.code,
+          ...(selectedOption.kind === "manual" && { manualPayment: manual }),
         }),
       });
       const data = await res.json();
@@ -134,7 +121,7 @@ export default function CheckoutView() {
       const { _id: orderId, orderNumber } = data.order;
       let redirect = `/success?order_id=${orderId}&orderNumber=${encodeURIComponent(orderNumber)}&payment_method=${method}`;
 
-      if (method === "stripe" || method === "sslcommerz") {
+      if (selectedOption.kind === "gateway") {
         const payRes = await fetch(`/api/checkout/${method}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -221,45 +208,18 @@ export default function CheckoutView() {
         </Step>
 
         <Step n={2} title="Payment method">
-          <div className="grid gap-3">
-            {(paymentMethods.length ? paymentMethods : ["cash_on_delivery"]).map((m) => {
-              const info = METHOD_INFO[m];
-              if (!info) return null;
-              const active = m === method;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMethod(m)}
-                  className={cn(
-                    "flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-colors",
-                    active ? "border-clay bg-clay/5" : "border-border hover:border-ink/30"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
-                      active ? "bg-clay text-white" : "bg-sand text-ink"
-                    )}
-                  >
-                    <info.icon className="h-5 w-5" />
-                  </span>
-                  <span className="flex-1">
-                    <span className="block font-semibold text-ink">{info.label}</span>
-                    <span className="block text-sm text-light-color">{info.hint}</span>
-                  </span>
-                  <span
-                    className={cn(
-                      "flex h-5 w-5 items-center justify-center rounded-full border-2",
-                      active ? "border-clay" : "border-border"
-                    )}
-                  >
-                    {active && <span className="h-2.5 w-2.5 rounded-full bg-clay" />}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          {!pricing && paymentOptions.length === 0 ? (
+            <div className="h-24 animate-pulse rounded-2xl bg-sand" />
+          ) : (
+            <PaymentOptionPicker
+              options={paymentOptions}
+              selectedId={optionId}
+              onSelect={setOptionId}
+              amount={pricing?.total}
+              manual={manual}
+              onManualChange={setManual}
+            />
+          )}
         </Step>
 
         <Step n={3} title="Review items">
@@ -302,15 +262,18 @@ export default function CheckoutView() {
       >
         <button
           onClick={placeOrder}
-          disabled={placing || !pricing || !!error || !selectedAddress}
+          disabled={placing || !pricing || !!error || !selectedAddress || !selectedOption}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-clay text-sm font-semibold text-white transition-colors hover:bg-clay-dark disabled:opacity-50"
         >
           {placing ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" /> Placing order…
             </>
-          ) : method === "cash_on_delivery" ? (
-            <>Place order{pricing ? ` · ${formatPrice(pricing.total)}` : ""}</>
+          ) : selectedOption?.kind !== "gateway" ? (
+            <>
+              {selectedOption?.kind === "manual" ? "Submit payment & order" : "Place order"}
+              {pricing ? ` · ${formatPrice(pricing.total)}` : ""}
+            </>
           ) : (
             <>Continue to payment{pricing ? ` · ${formatPrice(pricing.total)}` : ""}</>
           )}

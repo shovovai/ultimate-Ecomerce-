@@ -5,7 +5,7 @@ import Container from "@/components/Container";
 import CheckoutView from "@/components/checkout/CheckoutView";
 import { OrderCheckoutContent } from "@/components/checkout/OrderCheckoutContent";
 import { getOrderById } from "@/sanity/queries";
-import { availablePaymentMethods } from "@/lib/paymentMethods";
+import { getCheckoutPaymentOptions } from "@/lib/paymentMethods";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
 
@@ -29,7 +29,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
         <h1 className="mb-8 mt-2 font-display text-4xl text-ink">Complete your payment</h1>
         <OrderCheckoutContent
           order={order}
-          onlineMethods={availablePaymentMethods().filter((m) => m !== "cash_on_delivery")}
+          paymentOptions={(await getCheckoutPaymentOptions()).filter((o) => o.method !== "cash_on_delivery")}
         />
       </Container>
     );

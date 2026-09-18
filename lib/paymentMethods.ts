@@ -1,13 +1,19 @@
 import "server-only";
-import { PAYMENT_METHODS } from "@/lib/orderStatus";
+import { getPaymentConfig, paymentOptionsFrom, type PaymentOption } from "@/lib/paymentConfig";
 
-export const isSslCommerzConfigured = () =>
-  Boolean(process.env.SSLCOMMERZ_STORE_ID && process.env.SSLCOMMERZ_STORE_PASSWORD);
+export type { PaymentOption };
 
-/** Payment methods customers can pick at checkout, based on what is configured in .env */
-export function availablePaymentMethods(): string[] {
-  const methods: string[] = [PAYMENT_METHODS.CASH_ON_DELIVERY];
-  if (process.env.STRIPE_SECRET_KEY) methods.push(PAYMENT_METHODS.STRIPE);
-  if (isSslCommerzConfigured()) methods.push(PAYMENT_METHODS.SSLCOMMERZ);
-  return methods;
+/** Checkout payment options (no secrets), based on Admin → Payments */
+export async function getCheckoutPaymentOptions(orderTotal?: number): Promise<PaymentOption[]> {
+  return paymentOptionsFrom(await getPaymentConfig(), orderTotal);
+}
+
+/**
+ * Resolves a checkout selection (e.g. "bkash", "manual:ab12cd") against the
+ * enabled options. Returns null if that method isn't currently allowed.
+ */
+export async function resolvePaymentOption(id: unknown, orderTotal?: number): Promise<PaymentOption | null> {
+  if (typeof id !== "string") return null;
+  const options = await getCheckoutPaymentOptions(orderTotal);
+  return options.find((o) => o.id === id) || null;
 }

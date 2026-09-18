@@ -166,6 +166,37 @@ export const orderType = defineType({
       readOnly: true,
     }),
     defineField({
+      name: "paymentFee",
+      title: "Payment Fee (e.g. COD charge)",
+      type: "number",
+      readOnly: true,
+    }),
+    defineField({
+      name: "gatewayPaymentId",
+      title: "Gateway Payment ID (bKash paymentID / Nagad reference)",
+      type: "string",
+      readOnly: true,
+    }),
+    defineField({
+      name: "manualPayment",
+      title: "Manual Payment",
+      type: "object",
+      readOnly: true,
+      hidden: ({ document }) => document?.paymentMethod !== "manual",
+      fields: [
+        defineField({ name: "accountId", title: "Account ID", type: "string" }),
+        defineField({ name: "provider", title: "Provider", type: "string" }),
+        defineField({ name: "accountLabel", title: "Paid To (label)", type: "string" }),
+        defineField({ name: "accountNumber", title: "Paid To (number)", type: "string" }),
+        defineField({ name: "senderNumber", title: "Sender Number", type: "string" }),
+        defineField({ name: "transactionId", title: "Transaction ID", type: "string" }),
+        defineField({ name: "submittedAt", title: "Submitted At", type: "datetime" }),
+        defineField({ name: "verifiedBy", title: "Verified By", type: "string" }),
+        defineField({ name: "verifiedAt", title: "Verified At", type: "datetime" }),
+        defineField({ name: "rejectionReason", title: "Rejection Reason", type: "string" }),
+      ],
+    }),
+    defineField({
       name: "paymentTransactionId",
       title: "Payment Transaction ID",
       description: "Gateway transaction reference (SSLCommerz tran_id / val_id)",
@@ -218,6 +249,7 @@ export const orderType = defineType({
       options: {
         list: [
           { title: "Pending", value: "pending" },
+          { title: "Awaiting verification", value: "awaiting_verification" },
           { title: "Paid", value: "paid" },
           { title: "Failed", value: "failed" },
           { title: "Cancelled", value: "cancelled" },
@@ -233,6 +265,9 @@ export const orderType = defineType({
         list: [
           { title: "Cash on Delivery", value: "cash_on_delivery" },
           { title: "Stripe", value: "stripe" },
+          { title: "bKash", value: "bkash" },
+          { title: "Nagad", value: "nagad" },
+          { title: "Manual (send money)", value: "manual" },
           { title: "SSLCommerz (bKash, Nagad, cards)", value: "sslcommerz" },
           { title: "Clerk (legacy)", value: "clerk" },
           { title: "Card", value: "card" },

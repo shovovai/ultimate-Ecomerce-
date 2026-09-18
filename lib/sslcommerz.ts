@@ -2,28 +2,30 @@ import "server-only";
 import crypto from "crypto";
 import { backendClient } from "@/sanity/lib/backendClient";
 import { brand } from "@/config/brand";
-import { ORDER_STATUSES, PAYMENT_STATUSES } from "@/lib/orderStatus";
-import { sendOrderStatusNotification } from "@/lib/notificationService";
+import { PAYMENT_STATUSES } from "@/lib/orderStatus";
 import { CheckoutError, type PayableOrder } from "@/lib/stripeCheckout";
+import { getPaymentConfig } from "@/lib/paymentConfig";
+import { markOrderPaid } from "@/lib/orderPayment";
 
 // SSLCommerz hosted checkout (bKash, Nagad, Rocket, Upay, cards, net banking).
 // Docs: https://developer.sslcommerz.com/doc/v4/
 
-const sandbox = process.env.SSLCOMMERZ_SANDBOX !== "false";
-const BASE = sandbox ? "https://sandbox.sslcommerz.com" : "https://securepay.sslcommerz.com";
-
-function credentials() {
-  const storeId = process.env.SSLCOMMERZ_STORE_ID;
-  const storePass = process.env.SSLCOMMERZ_STORE_PASSWORD;
-  if (!storeId || !storePass) {
+// Credentials come from Admin → Payments (falls back to .env)
+async function credentials() {
+  const { sslcommerz } = await getPaymentConfig();
+  if (!sslcommerz.enabled || !sslcommerz.storeId || !sslcommerz.storePassword) {
     throw new CheckoutError("SSLCommerz is not configured", 503);
   }
-  return { storeId, storePass };
+  return {
+    storeId: sslcommerz.storeId,
+    storePass: sslcommerz.storePassword,
+    base: sslcommerz.sandbox ? "https://sandbox.sslcommerz.com" : "https://securepay.sslcommerz.com",
+  };
 }
 
 /** Starts a hosted payment session and returns the gateway URL */
 export async function createSslCommerzSession(order: PayableOrder): Promise<string> {
-  const { storeId, storePass } = credentials();
+  const { storeId, storePass, base } = await credentials();
   const tranId = `${order.orderNumber}-${crypto.randomBytes(3).toString("hex")}`;
   const callback = `${brand.url}/api/payments/sslcommerz`;
 
@@ -53,7 +55,7 @@ export async function createSslCommerzSession(order: PayableOrder): Promise<stri
     value_a: order._id,
   });
 
-  const res = await fetch(`${BASE}/gwprocess/v4/api.php`, {
+  const res = await fetch(`${base}/gwprocess/v4/api.php`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form.toString(),
@@ -82,8 +84,8 @@ interface ValidationResult {
  * everything matches the order, marks it paid. Returns the order id if paid.
  */
 export async function confirmSslCommerzPayment(valId: string): Promise<{ orderId?: string; paid: boolean }> {
-  const { storeId, storePass } = credentials();
-  const url = `${BASE}/validator/api/validationserverAPI.php?val_id=${encodeURIComponent(
+  const { storeId, storePass, base } = await credentials();
+  const url = `${base}/validator/api/validationserverAPI.php?val_id=${encodeURIComponent(
     valId
   )}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePass)}&format=json`;
 
@@ -111,29 +113,12 @@ export async function confirmSslCommerzPayment(valId: string): Promise<{ orderId
 
   const amountOk = Math.abs(Number(v.amount) - (order.totalPrice || 0)) < 0.01;
   const currencyOk = (v.currency_type || "").toUpperCase() === (order.currency || "").toUpperCase();
-  const tranOk = !order.paymentTransactionId || order.paymentTransactionId.startsWith(v.tran_id || "__");
+  const tranOk = Boolean(v.tran_id) && order.paymentTransactionId === v.tran_id;
   if (!amountOk || !currencyOk || !tranOk) {
     console.error("SSLCommerz validation mismatch", { orderId, v });
     return { orderId, paid: false };
   }
 
-  await backendClient
-    .patch(order._id)
-    .set({
-      paymentStatus: PAYMENT_STATUSES.PAID,
-      status: ORDER_STATUSES.PAID,
-      paymentTransactionId: `${v.tran_id} / ${v.val_id}`,
-      paidAt: new Date().toISOString(),
-    })
-    .commit();
-
-  if (order.clerkUserId) {
-    await sendOrderStatusNotification({
-      clerkUserId: order.clerkUserId,
-      orderNumber: order.orderNumber,
-      orderId: order._id,
-      status: ORDER_STATUSES.PAID,
-    }).catch(() => {});
-  }
+  await markOrderPaid(order._id, { transactionId: `${v.tran_id} / ${v.val_id}` });
   return { orderId, paid: true };
 }

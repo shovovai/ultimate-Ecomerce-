@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import useCartStore from "@/store";
+import type { PaymentOption } from "@/lib/paymentConfig";
 
 export interface QuotePricing {
   lines: { productId: string; name: string; unitPrice: number; quantity: number; lineTotal: number }[];
@@ -12,6 +13,7 @@ export interface QuotePricing {
   discountTotal: number;
   shipping: number;
   tax: number;
+  paymentFee: number;
   total: number;
   currency: string;
 }
@@ -45,10 +47,10 @@ export function useCouponCode() {
  * Server-calculated totals for the current cart (prices, discounts, coupon,
  * shipping, tax). Refetches when the cart or coupon changes.
  */
-export function useCheckoutQuote(couponCode: string) {
+export function useCheckoutQuote(couponCode: string, paymentOptionId = "") {
   const items = useCartStore((s) => s.items);
   const [pricing, setPricing] = useState<QuotePricing | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [paymentOptions, setPaymentOptions] = useState<PaymentOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const requestId = useRef(0);
@@ -71,6 +73,7 @@ export function useCheckoutQuote(couponCode: string) {
           body: JSON.stringify({
             items: items.map((i) => ({ productId: i.product._id, quantity: i.quantity })),
             couponCode: couponCode || undefined,
+            paymentOptionId: paymentOptionId || undefined,
           }),
         });
         const data = await res.json();
@@ -81,7 +84,7 @@ export function useCheckoutQuote(couponCode: string) {
         } else {
           setError(null);
           setPricing(data.pricing);
-          setPaymentMethods(data.paymentMethods || []);
+          setPaymentOptions(data.paymentOptions || []);
         }
       } catch {
         if (id === requestId.current) setError("Network error — please retry");
@@ -91,7 +94,7 @@ export function useCheckoutQuote(couponCode: string) {
     }, 250);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, couponCode]);
+  }, [key, couponCode, paymentOptionId]);
 
-  return { items, pricing, paymentMethods, error, loading };
+  return { items, pricing, paymentOptions, error, loading };
 }

@@ -22,6 +22,7 @@ import {
   UserCheck,
   Users,
   UsersRound,
+  Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -31,7 +32,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  badgeKey?: "accountRequests";
+  badgeKey?: "accountRequests" | "payments";
 }
 
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
@@ -47,6 +48,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     title: "Store",
     items: [
       { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
+      { label: "Payments", href: "/admin/payments", icon: Wallet, badgeKey: "payments" },
       { label: "Products", href: "/admin/products", icon: Package },
       { label: "Reviews", href: "/admin/reviews", icon: Star },
       { label: "Coupons", href: "/admin/coupons", icon: TicketPercent },
@@ -96,7 +98,7 @@ export default function AdminShell({ children, settings, user }: AdminShellProps
   const pathname = usePathname();
   const { signOut } = useClerk();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [badges, setBadges] = useState<{ accountRequests?: number }>({});
+  const [badges, setBadges] = useState<{ accountRequests?: number; payments?: number }>({});
 
   // Close the mobile drawer on navigation
   useEffect(() => setMobileOpen(false), [pathname]);
@@ -107,8 +109,14 @@ export default function AdminShell({ children, settings, user }: AdminShellProps
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled && data?.success) {
-          setBadges({ accountRequests: data.totalPendingRequests });
+          setBadges((b) => ({ ...b, accountRequests: data.totalPendingRequests }));
         }
+      })
+      .catch(() => {});
+    fetch("/api/admin/payments/verifications?status=awaiting", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.success) setBadges((b) => ({ ...b, payments: data.awaitingCount }));
       })
       .catch(() => {});
     return () => {

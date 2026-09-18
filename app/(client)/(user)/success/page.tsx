@@ -18,6 +18,9 @@ const PAYMENT_LABEL: Record<string, string> = {
   cash_on_delivery: "Cash on delivery",
   stripe: "Card",
   sslcommerz: "bKash / Nagad / card",
+  bkash: "bKash",
+  nagad: "Nagad",
+  manual: "Manual transfer",
 };
 
 export default async function SuccessPage({ searchParams }: Props) {
@@ -47,6 +50,7 @@ export default async function SuccessPage({ searchParams }: Props) {
     : null;
 
   const paid = order?.paymentStatus === "paid";
+  const verifying = order?.paymentStatus === "awaiting_verification";
   const awaitingOnlinePayment =
     order && !paid && order.paymentMethod !== "cash_on_delivery";
 
@@ -64,10 +68,16 @@ export default async function SuccessPage({ searchParams }: Props) {
           {awaitingOnlinePayment ? "Payment processing" : "Thank you"}
         </p>
         <h1 className="mt-2 font-display text-4xl text-ink sm:text-5xl">
-          {awaitingOnlinePayment ? "We're confirming your payment" : "Your order is confirmed"}
+          {verifying
+            ? "Order placed — verifying your payment"
+            : awaitingOnlinePayment
+              ? "We're confirming your payment"
+              : "Your order is confirmed"}
         </h1>
         <p className="mt-4 text-light-color">
-          {awaitingOnlinePayment
+          {verifying
+            ? "Thanks! Our team will check your transaction ID and confirm the payment shortly. You'll get a notification and an email as soon as it's verified."
+            : awaitingOnlinePayment
             ? "This usually takes a few seconds. Your order is saved — you'll see it marked as paid in your orders shortly."
             : `We've received your order${order?.email ? ` and sent a confirmation to ${order.email}` : ""}. We'll let you know when it's on its way.`}
         </p>
@@ -84,7 +94,13 @@ export default async function SuccessPage({ searchParams }: Props) {
                   paid ? "bg-sage/15 text-sage" : "bg-sand text-ink"
                 }`}
               >
-                {paid ? "Paid" : order.paymentMethod === "cash_on_delivery" ? "Pay on delivery" : "Awaiting payment"}
+                {paid
+                  ? "Paid"
+                  : verifying
+                    ? "Verifying payment"
+                    : order.paymentMethod === "cash_on_delivery"
+                      ? "Pay on delivery"
+                      : "Awaiting payment"}
               </span>
             </div>
             <dl className="grid grid-cols-2 gap-4 pt-4 text-sm">

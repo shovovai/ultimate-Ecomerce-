@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { PricingError, normalizeCartInput, priceCart } from "@/lib/pricing";
-import { availablePaymentMethods } from "@/lib/paymentMethods";
+import { getCheckoutPaymentOptions } from "@/lib/paymentMethods";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/checkout/quote  { items: [{ productId, quantity }], couponCode? }
-// Returns authoritative totals (same maths used when the order is created).
+// POST /api/checkout/quote  { items: [{ productId, quantity }], couponCode?, paymentOptionId? }
+// Returns authoritative totals (same maths used when the order is created)
+// plus the payment options the customer can choose from.
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -17,12 +18,16 @@ export async function POST(request: NextRequest) {
 
     const { userId } = await auth();
     const user = userId ? await currentUser() : null;
+    const optionId = typeof body.paymentOptionId === "string" ? body.paymentOptionId : "";
+    const paymentMethod = optionId.startsWith("manual:") ? "manual" : optionId;
 
     const pricing = await priceCart(items, {
       couponCode: body.couponCode,
       clerkUserId: userId,
       email: user?.primaryEmailAddress?.emailAddress,
+      paymentMethod,
     });
+    const paymentOptions = await getCheckoutPaymentOptions(pricing.total - pricing.paymentFee);
 
     return NextResponse.json({
       success: true,
@@ -36,17 +41,18 @@ export async function POST(request: NextRequest) {
         })),
         subtotal: pricing.subtotal,
         businessDiscount: pricing.businessDiscount,
-        coupon: pricing.coupon
-          ? { code: pricing.coupon.code, amount: pricing.coupon.amount }
-          : null,
+        coupon: pricing.coupon ? { code: pricing.coupon.code, amount: pricing.coupon.amount } : null,
         couponError: pricing.couponError,
         discountTotal: pricing.discountTotal,
         shipping: pricing.shipping,
         tax: pricing.tax,
+        paymentFee: pricing.paymentFee,
         total: pricing.total,
         currency: pricing.currency,
       },
-      paymentMethods: availablePaymentMethods(),
+      paymentOptions,
+      // kept for older clients
+      paymentMethods: paymentOptions.map((o) => o.method),
     });
   } catch (error) {
     if (error instanceof PricingError) {

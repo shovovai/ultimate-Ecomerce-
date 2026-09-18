@@ -16,6 +16,6 @@ export const structure: StructureResolver = (S) =>
       S.divider(),
       ...S.documentTypeListItems().filter(
         (item) =>
-          item.getId() && !["category", "storeSettings"].includes(item.getId()!)
+          item.getId() && !["category", "storeSettings", "paymentSettings"].includes(item.getId()!)
       ),
     ]);

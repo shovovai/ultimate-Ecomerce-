@@ -202,6 +202,8 @@ export const ORDER_BY_ID_QUERY = `
     },
     subtotal,
     couponCode,
+    paymentFee,
+    manualPayment,
     couponDiscount,
     businessDiscount,
     paymentTransactionId,

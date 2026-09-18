@@ -67,6 +67,15 @@ interface OrderDetailsPageProps {
     currency: string;
     amountDiscount: number;
     couponCode?: string;
+    paymentFee?: number;
+    manualPayment?: {
+      accountLabel?: string;
+      accountNumber?: string;
+      senderNumber?: string;
+      transactionId?: string;
+      submittedAt?: string;
+      rejectionReason?: string;
+    };
     address: {
       name: string;
       address: string;
@@ -294,7 +303,7 @@ const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({ order }) => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          {currentOrder.paymentStatus !== "paid" &&
+          {!["paid", "awaiting_verification"].includes(currentOrder.paymentStatus) &&
             currentOrder.status !== "cancelled" &&
             currentOrder.paymentMethod !== "cash_on_delivery" && (
               <Button asChild className="bg-clay hover:bg-clay-dark">
@@ -569,6 +578,12 @@ const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({ order }) => {
                     </span>
                   </div>
                 )}
+                {!!currentOrder.paymentFee && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Payment fee</span>
+                    <PriceFormatter amount={currentOrder.paymentFee} />
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-medium text-lg">
                   <span>Total</span>
@@ -577,6 +592,37 @@ const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({ order }) => {
               </div>
             </CardContent>
           </Card>
+
+          {currentOrder.manualPayment?.transactionId && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>
+                  <span className="text-gray-600">Paid to:</span>{" "}
+                  {currentOrder.manualPayment.accountLabel} ({currentOrder.manualPayment.accountNumber})
+                </p>
+                <p>
+                  <span className="text-gray-600">From:</span> {currentOrder.manualPayment.senderNumber}
+                </p>
+                <p>
+                  <span className="text-gray-600">TrxID:</span>{" "}
+                  <span className="font-mono">{currentOrder.manualPayment.transactionId}</span>
+                </p>
+                {currentOrder.paymentStatus === "awaiting_verification" && (
+                  <p className="rounded-lg bg-marigold/15 p-3 text-ink">We're verifying this payment. You'll be notified soon.</p>
+                )}
+                {currentOrder.paymentStatus === "failed" && (
+                  <p className="rounded-lg bg-dark-red/10 p-3 text-dark-red">
+                    We couldn't verify this payment
+                    {currentOrder.manualPayment.rejectionReason ? `: ${currentOrder.manualPayment.rejectionReason}` : "."}{" "}
+                    Use &ldquo;Pay now&rdquo; to submit it again.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Shipping Address */}
           <Card>

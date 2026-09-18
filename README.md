@@ -31,7 +31,7 @@ This document explains what the system does, where data is stored, how it is set
 
 - Product catalog with categories, brands, deals, search and filters (price, brand, category)
 - Cart, wishlist, checkout with saved addresses
-- Payments: **Cash on Delivery**, **SSLCommerz** (bKash, Nagad, Rocket, cards — Bangladesh) and **Stripe** (international cards). Online methods appear automatically once their keys are set
+- Payments: **Cash on Delivery** (optional fee / maximum amount), **bKash** and **Nagad** (native merchant APIs), **SSLCommerz**, **Stripe**, and **manual "Send Money"** to your personal/agent bKash, Nagad, Rocket, Upay or bank account with admin verification. All configured from **Admin → Payments**
 - **Coupons / discount codes** in the cart and at checkout (percent or fixed, minimum order, expiry, usage limits)
 - Totals are always calculated on the server — prices can't be changed from the browser
 - Customer account: orders, order tracking timeline, invoices, profile, notifications
@@ -52,6 +52,7 @@ This document explains what the system does, where data is stored, how it is set
 | **Reports & Export** | Customer insights (repeat rate, average order value, customer value, segments, top customers, top products, top cities, new customers per month) and **Excel/CSV export** of orders, customers, products, subscribers and reviews |
 | **Orders** | Search, filter and update orders; assign employees; refunds to wallet; cancellations |
 | **Products** | Create, edit and delete products: images (upload), price, discount, stock, categories, brand, badge, featured |
+| **Payments** | *Verifications*: approve or reject manual (send-money) payments by TrxID. *Gateways & methods*: turn COD, bKash, Nagad, SSLCommerz, Stripe and manual numbers on/off, sandbox/live, and enter credentials (stored encrypted) |
 | **Coupons** | Create discount codes, set limits and expiry, switch them on/off, see how often each was used |
 | **Reviews** | Approve or reject customer reviews; product ratings are recalculated |
 | **Users** | Customer list (Clerk + Sanity), details, activation, sync |
@@ -135,6 +136,7 @@ WebHaat has no separate SQL/Mongo database. **Sanity is the database.** Data is 
 | `subscription` | Newsletter subscribers (email, status, source) |
 | `emailCampaign` | History of campaigns sent from the admin panel |
 | `coupon` | Discount codes (type, value, limits, expiry, times used) |
+| `paymentSettings` | Singleton with payment gateway settings (secrets encrypted) |
 | `storeSettings` | Singleton with admin branding, store info and announcement bar |
 | `sentNotification` | Notifications sent by admins |
 | `userAccessRequest` | Access and approval requests |
@@ -225,9 +227,10 @@ All settings live in `.env` (copy it from `.env.example`). **Never commit `.env`
 | `CLERK_SECRET_KEY` | yes | Clerk secret key |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `..._SIGN_UP_URL` | yes | `/sign-in` and `/sign-up` |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` / `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` | yes | `/` |
-| `STRIPE_SECRET_KEY` | no | Stripe secret key. Leave empty to hide card payments |
+| `PAYMENT_ENCRYPTION_KEY` | **yes** | Long random string used to encrypt gateway credentials saved in Admin → Payments. Never change it after saving credentials |
+| `STRIPE_SECRET_KEY` | no | Optional fallback — Stripe keys are normally entered in Admin → Payments |
 | `STRIPE_WEBHOOK_SECRET` | with Stripe | Signing secret of the `/api/webhook` endpoint |
-| `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD` | no | SSLCommerz credentials. Leave empty to hide bKash/Nagad/card via SSLCommerz |
+| `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD` | no | Optional fallback — normally entered in Admin → Payments |
 | `SSLCOMMERZ_SANDBOX` | no | `true` (default) for the sandbox, `false` for live payments |
 | `NEXT_PUBLIC_ADMIN_EMAIL` | yes | Admin emails, comma-separated: `owner@shop.com,manager@shop.com` |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `SENDER_EMAIL_ADDRESS` | for emails | Gmail OAuth2 used by Nodemailer |
@@ -276,10 +279,34 @@ All settings live in `.env` (copy it from `.env.example`). **Never commit `.env`
    stripe listen --forward-to localhost:3000/api/webhook
    ```
 
+### Payment gateways (Admin → Payments)
+
+All payment methods are managed from **Admin → Payments → Gateways & methods**. Credentials are encrypted with `PAYMENT_ENCRYPTION_KEY` before being stored, and the admin screen never shows them again (only the last 4 characters). Each gateway has a **Sandbox / Live** switch — test in sandbox first. Online gateways require `NEXT_PUBLIC_CURRENCY=BDT` for bKash and Nagad.
+
+**bKash (Tokenized Checkout)**
+1. Apply for a bKash merchant account / PGW at [bkash.com](https://www.bkash.com/en/business) — you receive *App key, App secret, Username, Password*. Sandbox credentials are available from bKash's developer portal.
+2. Enter them in Admin → Payments → bKash. Give bKash the **callback URL** shown there (`/api/payments/bkash/callback`).
+3. Flow: customer is sent to bKash → returns to the callback → the payment is *executed* and checked (invoice number + amount) → order marked paid.
+
+**Nagad (merchant API)**
+1. Get a Nagad merchant account — you receive a *Merchant ID*, your *merchant private key* and *Nagad's public key*. Nagad must also whitelist your server IP for live mode.
+2. Paste them in Admin → Payments → Nagad.
+3. Flow: initialize + complete (RSA-encrypted, signed) → customer pays on Nagad → callback → payment re-verified with Nagad → order marked paid.
+
+**Manual payments (personal / agent numbers)**
+1. Turn on *Manual payment* and add numbers, e.g. *bKash Personal 017XXXXXXXX*, *Nagad Personal*, *Rocket*, or a bank account.
+2. At checkout the customer sees your number and the exact amount, sends the money, then enters **their number + Transaction ID (TrxID)**.
+3. The order is saved as *Awaiting verification*; admins get an email and a badge on **Payments**.
+4. In **Payments → Verifications**, check the TrxID in your app, then **Approve** (order → paid) or **Reject** with a reason (customer is notified and can resubmit from the order page). Each TrxID can only be used once.
+
+**Cash on delivery** — optional *COD fee* (added to the total) and *maximum order amount* (COD hidden above it).
+
+> Native bKash / Nagad integrations follow the providers' published APIs. Always complete a sandbox payment and one small live payment before launch; merchant accounts sometimes use different API versions.
+
 ### SSLCommerz (bKash, Nagad, Rocket, cards — Bangladesh)
 
 1. Create a free sandbox account at [developer.sslcommerz.com](https://developer.sslcommerz.com/registration/) — you receive a **Store ID** and **Store Password** by email.
-2. Put them in `SSLCOMMERZ_STORE_ID` / `SSLCOMMERZ_STORE_PASSWORD` and set `NEXT_PUBLIC_CURRENCY=BDT`.
+2. Enter them in Admin → Payments → SSLCommerz (or `SSLCOMMERZ_STORE_ID` / `SSLCOMMERZ_STORE_PASSWORD` in `.env`) and set `NEXT_PUBLIC_CURRENCY=BDT`.
 3. Test with the sandbox (`SSLCOMMERZ_SANDBOX=true`). For real payments, apply for a live merchant account, use the live credentials and set `SSLCOMMERZ_SANDBOX=false`.
 4. `NEXT_PUBLIC_BASE_URL` must be your public site URL: SSLCommerz sends customers back to `/api/payments/sslcommerz/success|fail|cancel` and notifies `/api/payments/sslcommerz/ipn`. For local testing use a tunnel such as `ngrok http 3000`.
 
@@ -397,7 +424,9 @@ Run it behind a reverse proxy (Nginx or Caddy) with HTTPS, and use a process man
 | Problem | Fix |
 | --- | --- |
 | `Missing environment variable: NEXT_PUBLIC_SANITY_...` | Fill in the Sanity variables in `.env` and restart |
-| Card / SSLCommerz option missing at checkout | The keys for that gateway are empty in `.env` — only configured methods are shown |
+| A payment option is missing at checkout | Enable it in Admin → Payments and fill in its credentials — only configured methods are shown |
+| "Set PAYMENT_ENCRYPTION_KEY…" when saving payments | Add `PAYMENT_ENCRYPTION_KEY` to `.env` and restart |
+| bKash/Nagad "require the store currency to be BDT" | Set `NEXT_PUBLIC_CURRENCY=BDT` |
 | Products or pages show nothing after making the dataset private | Set `SANITY_API_READ_TOKEN` (Viewer token) and restart |
 | Coupon "not valid" | Check it is active, not expired, under its usage limit and the cart meets the minimum subtotal |
 | `/admin` redirects to access-denied | Your sign-in email must be listed exactly in `NEXT_PUBLIC_ADMIN_EMAIL`. Restart after changing `.env` |

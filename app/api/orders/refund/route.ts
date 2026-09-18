@@ -3,7 +3,8 @@ import { formatPrice } from "@/lib/storeConfig";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeClient, client } from "@/sanity/lib/client";
-import stripe from "@/lib/stripe";
+import { getStripeClient } from "@/lib/stripe";
+
 
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
     ) {
       try {
         // Create refund in Stripe
+        const stripe = await getStripeClient({ requireEnabled: false });
         const refund = await stripe.refunds.create({
           payment_intent: order.stripePaymentIntentId,
           reason: "requested_by_customer",

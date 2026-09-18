@@ -24,6 +24,9 @@ const paymentLabel = (m: string) =>
     cash_on_delivery: "Cash on delivery",
     stripe: "Card (Stripe)",
     sslcommerz: "SSLCommerz (bKash / Nagad / card)",
+    bkash: "bKash",
+    nagad: "Nagad",
+    manual: "Manual transfer (awaiting verification)",
   })[m] || m;
 
 /** Order confirmation to the customer. Never throws. */

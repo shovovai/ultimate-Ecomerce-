@@ -1,7 +1,10 @@
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import stripe from "@/lib/stripe";
+import { getStripeClient, getStripeWebhookSecret } from "@/lib/stripe";
+
+// Assigned at the start of each request (keys come from Admin → Payments)
+let stripe: Stripe;
 import { backendClient } from "@/sanity/lib/backendClient";
 import { ORDER_STATUSES, PAYMENT_STATUSES } from "@/lib/orderStatus";
 import { sendOrderStatusNotification } from "@/lib/notificationService";
@@ -20,7 +23,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = await getStripeWebhookSecret();
   if (!webhookSecret) {
     return NextResponse.json(
       {
@@ -33,6 +36,7 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event;
 
   try {
+    stripe = await getStripeClient({ requireEnabled: false });
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (error) {
     console.error("Webhook signature verification failed:", error);

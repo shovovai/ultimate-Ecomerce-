@@ -1,29 +1,29 @@
+import "server-only";
 import Stripe from "stripe";
+import { getPaymentConfig } from "@/lib/paymentConfig";
 
-// Stripe is optional: stores can run on Cash on Delivery / SSLCommerz only.
-// The client is created lazily so a missing STRIPE_SECRET_KEY never breaks
-// the build or unrelated pages — only Stripe calls fail, with a clear error.
-export const isStripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
+// Stripe is optional. Keys come from Admin → Payments (falls back to .env).
+let cached: { key: string; client: Stripe } | null = null;
 
-let client: Stripe | null = null;
-
-export function getStripe(): Stripe {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error(
-      "STRIPE_SECRET_KEY is not set. Add it to .env to enable card payments."
-    );
+/**
+ * Returns a Stripe client using the configured secret key.
+ * `requireEnabled: false` is used by webhooks/refunds so existing card
+ * payments keep working even after the gateway is switched off for checkout.
+ */
+export async function getStripeClient(options: { requireEnabled?: boolean } = {}): Promise<Stripe> {
+  const { stripe } = await getPaymentConfig();
+  if (!stripe.secretKey || (options.requireEnabled !== false && !stripe.enabled)) {
+    throw new Error("Stripe is not configured. Add the keys in Admin → Payments.");
   }
-  client ??= new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-10-29.clover",
-  });
-  return client;
+  if (!cached || cached.key !== stripe.secretKey) {
+    cached = {
+      key: stripe.secretKey,
+      client: new Stripe(stripe.secretKey, { apiVersion: "2025-10-29.clover" }),
+    };
+  }
+  return cached.client;
 }
 
-// Backwards-compatible default export: `stripe.checkout...` resolves lazily
-const stripe = new Proxy({} as Stripe, {
-  get(_target, prop) {
-    return getStripe()[prop as keyof Stripe];
-  },
-});
-
-export default stripe;
+export async function getStripeWebhookSecret(): Promise<string> {
+  return (await getPaymentConfig()).stripe.webhookSecret;
+}
