@@ -40,7 +40,7 @@ export default function CartView() {
   const itemCount = items.reduce((n, i) => n + i.quantity, 0);
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
+    <div className="grid items-start gap-8 pb-20 lg:grid-cols-[1fr_380px] lg:pb-0">
       <section>
         <div className="mb-4 flex items-center justify-between text-sm">
           <p className="text-light-color">
@@ -157,6 +157,23 @@ export default function CartView() {
           Checkout securely <ArrowRight className="h-4 w-4" />
         </button>
       </OrderSummary>
+
+      {/* Phones: sticky total + action above the bottom nav */}
+      <div className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 lg:hidden">
+        <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-white/95 p-2 pl-4 shadow-[0_10px_30px_-10px_rgba(31,26,23,0.35)] ring-1 ring-ink/10 backdrop-blur">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-light-color">Total</p>
+            <p className="font-display text-lg leading-tight text-ink">{pricing ? formatPrice(pricing.total) : "…"}</p>
+          </div>
+          <button
+            onClick={() => router.push("/checkout")}
+            disabled={!pricing || !!error}
+            className="flex h-11 items-center gap-2 rounded-xl bg-ink px-5 text-sm font-semibold text-cream disabled:opacity-50"
+          >
+            Checkout <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

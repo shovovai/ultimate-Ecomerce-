@@ -1,6 +1,7 @@
 import { formatPrice } from "@/lib/storeConfig";
 import { Metadata } from "next";
 import { brand } from "@/config/brand";
+import type { StoreSettings } from "@/lib/storeSettings";
 import { Product, Category } from "@/sanity.types";
 import { urlFor } from "@/sanity/lib/image";
 
@@ -13,12 +14,12 @@ export function generateProductMetadata(product: any): Metadata {
   const title = product.name || "Product";
   const description =
     product.description ||
-    `Buy ${title} online at WebHaat. ${
+    `Buy ${title} online at ${brand.name}. ${
       product.price ? `Price: ${formatPrice(product.price)}` : ""
     }`;
   const imageUrl = product.images?.[0]
-    ? urlFor(product.images[0]).url()
-    : "/og-image.jpg";
+    ? urlFor(product.images[0]).width(1200).url()
+    : `${BASE_URL}/og?title=${encodeURIComponent(title)}`;
   const url = `${BASE_URL}/product/${product.slug?.current}`;
 
   // Extract brand name if it's populated
@@ -72,10 +73,10 @@ export function generateCategoryMetadata(
   const title = category.title || "Category";
   const description =
     category.description ||
-    `Browse ${productCount} products in ${title} category at WebHaat. Find the best deals and quality items.`;
+    `Browse ${productCount} products in ${title} category at ${brand.name}. Find the best deals and quality items.`;
   const imageUrl = category.image
-    ? urlFor(category.image).url()
-    : "/og-image.jpg";
+    ? urlFor(category.image).width(1200).url()
+    : `${BASE_URL}/og?title=${encodeURIComponent(title)}`;
   const url = `${BASE_URL}/category/${category.slug?.current}`;
 
   return {
@@ -184,41 +185,45 @@ export function generateBreadcrumbSchema(
 }
 
 /**
- * Generate Organization Schema (JSON-LD)
+ * Organization + WebSite schema (JSON-LD), driven by Admin → SEO & Branding
  */
-export function generateOrganizationSchema() {
+export function generateOrganizationSchema(settings?: StoreSettings) {
+  const name = settings?.storeName || brand.name;
+  const logo = settings?.siteLogoUrl || settings?.faviconUrl || `${BASE_URL}/icon.svg`;
+  const sameAs = settings
+    ? [
+        settings.facebookUrl,
+        settings.instagramUrl,
+        settings.twitterUrl,
+        settings.youtubeUrl,
+        settings.linkedinUrl,
+        settings.tiktokUrl,
+      ].filter(Boolean)
+    : Object.values(brand.social);
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "WebHaat",
+    name,
     url: BASE_URL,
-    logo: `${BASE_URL}/logo.png`,
-    description:
-      "Your trusted online shopping destination for quality items and exceptional customer service.",
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: "+1-555-123-4567",
-      contactType: "customer service",
-      areaServed: "US",
-      availableLanguage: "en",
-    },
-    sameAs: [
-      "https://facebook.com/webhaat",
-      "https://twitter.com/webhaat",
-      "https://instagram.com/webhaat",
-      "https://linkedin.com/company/webhaat",
-    ],
+    logo,
+    description: settings?.seoDescription || brand.description,
+    ...((settings?.supportPhone || settings?.supportEmail) && {
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer service",
+        ...(settings?.supportPhone && { telephone: settings.supportPhone }),
+        ...(settings?.supportEmail && { email: settings.supportEmail }),
+      },
+    }),
+    sameAs,
   };
 }
 
-/**
- * Generate WebSite Schema (JSON-LD) with search action
- */
-export function generateWebsiteSchema() {
+export function generateWebsiteSchema(settings?: StoreSettings) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "WebHaat",
+    name: settings?.storeName || brand.name,
     url: BASE_URL,
     potentialAction: {
       "@type": "SearchAction",

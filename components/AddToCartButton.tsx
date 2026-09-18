@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import useCartStore from "@/store";
 import QuantityButtons from "./QuantityButtons";
 import { cn } from "@/lib/utils";
-import { ShoppingBag } from "lucide-react";
+import { Plus, ShoppingBag } from "lucide-react";
 import { trackAddToCart } from "@/lib/analytics";
 
 interface Props {
@@ -15,9 +15,11 @@ interface Props {
   className?: string;
   /** Small overlay style used on product cards */
   compact?: boolean;
+  /** Round icon-only button (product cards on phones) */
+  variant?: "bar" | "icon";
 }
 
-const AddToCartButton = memo(({ product, className, compact = false }: Props) => {
+const AddToCartButton = memo(({ product, className, compact = false, variant = "bar" }: Props) => {
   const { addItem, getItemCount } = useCartStore();
   const [isClient, setIsClient] = useState(false);
 
@@ -55,6 +57,29 @@ const AddToCartButton = memo(({ product, className, compact = false }: Props) =>
   }, [product, itemCount, addItem]);
 
   // Early return after all hooks have been called - this is crucial for Rules of Hooks
+  if (compact && variant === "icon") {
+    if (!isClient) return <div className="h-10 w-10" />;
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          handleAddToCart();
+        }}
+        disabled={isOutOfStock}
+        aria-label={isOutOfStock ? "Out of stock" : `Add ${product?.name} to cart`}
+        className="relative flex h-10 w-10 items-center justify-center rounded-full bg-ink text-cream shadow-lg shadow-ink/20 transition-transform active:scale-90 disabled:bg-ink/30"
+      >
+        {itemCount ? <span className="text-sm font-bold">{itemCount}</span> : <Plus className="h-5 w-5" strokeWidth={2.5} />}
+        {!!itemCount && (
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-marigold text-ink ring-2 ring-white">
+            <Plus className="h-3 w-3" strokeWidth={3} />
+          </span>
+        )}
+      </button>
+    );
+  }
+
   if (compact) {
     if (!isClient) return <div className="h-10" />;
     return itemCount ? (

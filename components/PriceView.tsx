@@ -8,7 +8,9 @@ interface Props {
   className?: string;
 }
 
-const PriceView = ({ price, discount, className }: Props) => {
+const PriceView = ({ price, discount: rawDiscount, className }: Props) => {
+  // Guard against bad data (e.g. 600 entered instead of 6)
+  const discount = rawDiscount && rawDiscount > 0 && rawDiscount < 100 ? rawDiscount : undefined;
   // Current/payable price is the actual price (discounted price)
   const currentPrice = price || 0;
 

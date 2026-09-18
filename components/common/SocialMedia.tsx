@@ -1,5 +1,6 @@
-import { Facebook, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
-import { brand } from "@/config/brand";
+"use client";
+import { Facebook, Instagram, Linkedin, Music2, Twitter, Youtube } from "lucide-react";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import {
   Tooltip,
   TooltipContent,
@@ -14,35 +15,19 @@ interface Props {
   tooltipClassName?: string;
 }
 
-const socialLink = [
-  {
-    title: "Facebook",
-    href: brand.social.facebook,
-    icon: <Facebook className="w-5 h-5" />,
-  },
-  {
-    title: "Instagram",
-    href: brand.social.instagram,
-    icon: <Instagram className="w-5 h-5" />,
-  },
-  {
-    title: "Twitter",
-    href: brand.social.twitter,
-    icon: <Twitter className="w-5 h-5" />,
-  },
-  {
-    title: "Linkedin",
-    href: brand.social.linkedin,
-    icon: <Linkedin className="w-5 h-5" />,
-  },
-  {
-    title: "Youtube",
-    href: brand.social.youtube,
-    icon: <Youtube className="w-5 h-5" />,
-  },
-];
+
 
 const SocialMedia = ({ className, iconClassName, tooltipClassName }: Props) => {
+  const { social } = useSiteSettings();
+  const socialLink = [
+    { title: "Facebook", href: social.facebook, icon: <Facebook className="w-5 h-5" /> },
+    { title: "Instagram", href: social.instagram, icon: <Instagram className="w-5 h-5" /> },
+    { title: "X / Twitter", href: social.twitter, icon: <Twitter className="w-5 h-5" /> },
+    { title: "LinkedIn", href: social.linkedin, icon: <Linkedin className="w-5 h-5" /> },
+    { title: "YouTube", href: social.youtube, icon: <Youtube className="w-5 h-5" /> },
+    { title: "TikTok", href: social.tiktok, icon: <Music2 className="w-5 h-5" /> },
+  ].filter((item) => item.href);
+
   return (
     <TooltipProvider>
       <div className={cn("flex items-center gap-3.5 text-zinc-400", className)}>

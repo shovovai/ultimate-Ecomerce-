@@ -7,6 +7,8 @@ import {
   EDITABLE_SETTINGS_KEYS,
   STORE_SETTINGS_ID,
   getStoreSettings,
+  SETTINGS_PATTERNS,
+  URL_SETTINGS,
 } from "@/lib/storeSettings";
 
 export const dynamic = "force-dynamic";
@@ -41,15 +43,27 @@ export async function PUT(request: NextRequest) {
       update[key] = typeof value === "string" ? value.trim() : value;
     }
 
-    if (
-      typeof update.accentColor === "string" &&
-      update.accentColor &&
-      !/^#([0-9a-fA-F]{3}){1,2}$/.test(update.accentColor)
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Accent color must be a hex value like #1f1a17" },
-        { status: 400 }
-      );
+    // Format checks for values that end up in meta / script tags
+    for (const [key, pattern] of Object.entries(SETTINGS_PATTERNS)) {
+      const v = update[key];
+      if (typeof v === "string" && v && !pattern!.test(v)) {
+        return NextResponse.json(
+          { success: false, error: `"${v}" is not a valid value for ${key}` },
+          { status: 400 }
+        );
+      }
+    }
+    for (const key of URL_SETTINGS) {
+      const v = update[key];
+      if (typeof v === "string" && v && !/^https?:\/\/[^\s"<>]+$/i.test(v)) {
+        return NextResponse.json(
+          { success: false, error: `${key} must be a full URL starting with https://` },
+          { status: 400 }
+        );
+      }
+    }
+    if (typeof update.twitterHandle === "string" && update.twitterHandle && !update.twitterHandle.startsWith("@")) {
+      update.twitterHandle = "@" + update.twitterHandle;
     }
 
     await backendClient.createIfNotExists({

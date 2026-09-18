@@ -57,6 +57,7 @@ const Shop = ({ categories, brands }: Props) => {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sort, setSort] = useState<Sort>("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const search = (searchParams?.get("search") || "").trim();
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -65,6 +66,7 @@ const Shop = ({ categories, brands }: Props) => {
       const data = await catalogFetch<Product[]>("shop", {
         selectedCategory: category,
         selectedBrand: brand,
+        search: search || undefined,
         minPrice,
         maxPrice,
       });
@@ -75,7 +77,7 @@ const Shop = ({ categories, brands }: Props) => {
     } finally {
       setLoading(false);
     }
-  }, [category, brand, price]);
+  }, [category, brand, price, search]);
 
   useEffect(() => {
     fetchProducts();
@@ -170,7 +172,9 @@ const Shop = ({ categories, brands }: Props) => {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-clay">The market</p>
-          <h1 className="mt-2 font-display text-4xl text-ink sm:text-5xl">Shop everything</h1>
+          <h1 className="mt-2 font-display text-4xl text-ink sm:text-5xl">
+            {search ? <>Results for &ldquo;{search}&rdquo;</> : "Shop everything"}
+          </h1>
           <p className="mt-2 text-sm text-light-color">
             {loading ? "Loading products…" : `${visible.length} product${visible.length === 1 ? "" : "s"}`}
           </p>

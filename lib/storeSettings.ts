@@ -15,6 +15,33 @@ export interface StoreSettings {
   announcementEnabled: boolean;
   announcementText: string;
   announcementLink: string;
+  // Branding & icons
+  siteLogoUrl: string;
+  faviconUrl: string;
+  ogImageUrl: string;
+  themeColor: string;
+  // Search engines
+  seoTitle: string;
+  seoTitleTemplate: string;
+  seoDescription: string;
+  seoKeywords: string;
+  noindex: boolean;
+  googleVerification: string;
+  bingVerification: string;
+  facebookDomainVerification: string;
+  // Social profiles
+  twitterHandle: string;
+  facebookUrl: string;
+  instagramUrl: string;
+  twitterUrl: string;
+  youtubeUrl: string;
+  linkedinUrl: string;
+  tiktokUrl: string;
+  // Analytics & ads
+  googleAnalyticsId: string;
+  googleTagManagerId: string;
+  facebookPixelId: string;
+  adsenseClientId: string;
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -30,7 +57,58 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   announcementEnabled: false,
   announcementText: "",
   announcementLink: "",
+  siteLogoUrl: "",
+  faviconUrl: "",
+  ogImageUrl: "",
+  themeColor: "#c2542d",
+  seoTitle: `${brand.name} - ${brand.tagline}`,
+  seoTitleTemplate: `%s | ${brand.name}`,
+  seoDescription: brand.description,
+  seoKeywords: "online shopping, e-commerce, buy online, electronics, home appliances, deals",
+  noindex: false,
+  googleVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+  bingVerification: "",
+  facebookDomainVerification: "",
+  twitterHandle: brand.twitterHandle,
+  facebookUrl: brand.social.facebook,
+  instagramUrl: brand.social.instagram,
+  twitterUrl: brand.social.twitter,
+  youtubeUrl: brand.social.youtube,
+  linkedinUrl: brand.social.linkedin,
+  tiktokUrl: "",
+  googleAnalyticsId: "",
+  googleTagManagerId: "",
+  facebookPixelId: "",
+  adsenseClientId: process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || "",
 };
+
+/** Format rules for settings that end up in <script> tags or meta tags */
+export const SETTINGS_PATTERNS: Partial<Record<keyof StoreSettings, RegExp>> = {
+  accentColor: /^#([0-9a-fA-F]{3}){1,2}$/,
+  themeColor: /^#([0-9a-fA-F]{3}){1,2}$/,
+  googleAnalyticsId: /^G-[A-Z0-9]{4,20}$/,
+  googleTagManagerId: /^GTM-[A-Z0-9]{4,12}$/,
+  facebookPixelId: /^\d{5,20}$/,
+  adsenseClientId: /^ca-pub-\d{10,20}$/,
+  twitterHandle: /^@?[A-Za-z0-9_]{1,15}$/,
+  googleVerification: /^[A-Za-z0-9_-]{10,100}$/,
+  bingVerification: /^[A-Za-z0-9_-]{10,100}$/,
+  facebookDomainVerification: /^[A-Za-z0-9_-]{10,100}$/,
+};
+
+/** Fields that must be http(s) URLs when set */
+export const URL_SETTINGS: (keyof StoreSettings)[] = [
+  "adminLogoUrl",
+  "siteLogoUrl",
+  "faviconUrl",
+  "ogImageUrl",
+  "facebookUrl",
+  "instagramUrl",
+  "twitterUrl",
+  "youtubeUrl",
+  "linkedinUrl",
+  "tiktokUrl",
+];
 
 export const EDITABLE_SETTINGS_KEYS = Object.keys(
   DEFAULT_STORE_SETTINGS

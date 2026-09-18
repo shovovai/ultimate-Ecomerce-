@@ -1,37 +1,40 @@
+import type { MetadataRoute } from "next";
 import { brand } from "@/config/brand";
-import { MetadataRoute } from "next";
+import { getSiteSettings } from "@/lib/siteSeo";
 
-export default function robots(): MetadataRoute.Robots {
+export const revalidate = 3600;
+
+// Private/transactional areas are never crawled. "Hide site from search
+// engines" in Admin → SEO & Branding blocks everything (e.g. while testing).
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const settings = await getSiteSettings();
+  if (settings.noindex) {
+    return { rules: [{ userAgent: "*", disallow: "/" }] };
+  }
   return {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        allow: ["/", "/og"],
         disallow: [
           "/api/",
-          "/admin/",
-          "/employee/",
-          "/user/",
-          "/dashboard/",
-          "/studio/",
-          "/_next/",
-          "/checkout/",
-        ],
-      },
-      {
-        userAgent: "Googlebot",
-        allow: "/",
-        disallow: [
-          "/api/",
-          "/admin/",
-          "/employee/",
-          "/user/",
-          "/dashboard/",
-          "/studio/",
-          "/checkout/",
+          "/admin",
+          "/studio",
+          "/employee",
+          "/user",
+          "/dashboard",
+          "/orders",
+          "/cart",
+          "/checkout",
+          "/success",
+          "/wishlist",
+          "/sign-in",
+          "/sign-up",
+          "/newsletter/",
         ],
       },
     ],
     sitemap: `${brand.url}/sitemap.xml`,
+    host: brand.url,
   };
 }

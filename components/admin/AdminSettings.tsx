@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import ImageUploadField from "./ImageUploadField";
 
 interface Settings {
   adminPanelTitle: string;
@@ -132,8 +133,8 @@ export default function AdminSettings() {
         <Field id="adminPanelTitle" label="Panel title">
           <Input {...text("adminPanelTitle")} />
         </Field>
-        <Field id="adminLogoUrl" label="Logo URL" hint="Square image URL (PNG/SVG). Leave empty to use the default icon.">
-          <Input {...text("adminLogoUrl")} placeholder="https://…/logo.png" />
+        <Field id="adminLogoUrl" label="Admin panel logo" hint="Square image. The store logo, favicon and share image are in SEO & Branding.">
+          <ImageUploadField value={settings.adminLogoUrl} onChange={(v) => set("adminLogoUrl", v)} previewClassName="h-16 w-16" />
         </Field>
         <Field id="accentColor" label="Accent color">
           <div className="flex flex-wrap items-center gap-3">

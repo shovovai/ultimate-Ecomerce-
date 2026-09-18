@@ -12,6 +12,7 @@ const ProductCard = memo(({ product }: { product: Product }) => {
   const outOfStock = product?.stock === 0;
   const lowStock = !outOfStock && (product?.stock ?? 0) > 0 && (product?.stock ?? 0) <= 5;
   const rating = product?.averageRating || 0;
+  const discount = product?.discount && product.discount > 0 && product.discount < 100 ? product.discount : 0;
 
   return (
     <article className="group flex flex-col">
@@ -32,9 +33,9 @@ const ProductCard = memo(({ product }: { product: Product }) => {
 
         {/* Badges */}
         <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5">
-          {!!product?.discount && product.discount > 0 && (
+          {discount > 0 && (
             <span className="rounded-full bg-clay px-2.5 py-1 text-[11px] font-bold text-white">
-              -{product.discount}%
+              -{discount}%
             </span>
           )}
           {product?.status === "hot" && (
@@ -42,7 +43,7 @@ const ProductCard = memo(({ product }: { product: Product }) => {
               Hot
             </span>
           )}
-          {product?.status === "sale" && !product?.discount && (
+          {product?.status === "sale" && !discount && (
             <span className="rounded-full bg-clay px-2.5 py-1 text-[11px] font-bold text-white">
               Sale
             </span>
@@ -61,8 +62,11 @@ const ProductCard = memo(({ product }: { product: Product }) => {
 
         <ProductSideMenu product={product} />
 
-        {/* Quick add — slides up on hover (always visible on touch) */}
-        <div className="absolute inset-x-3 bottom-3 translate-y-0 opacity-100 transition-all duration-300 lg:translate-y-3 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100">
+        {/* Quick add: round button on phones, slide-up bar on desktop hover */}
+        <div className="absolute bottom-2.5 right-2.5 lg:hidden">
+          <AddToCartButton product={product} compact variant="icon" />
+        </div>
+        <div className="absolute inset-x-3 bottom-3 hidden translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 lg:block">
           <AddToCartButton product={product} compact />
         </div>
       </div>

@@ -11,6 +11,7 @@ export const storeSettingsType = defineType({
     { name: "branding", title: "Admin Branding", default: true },
     { name: "store", title: "Store Info" },
     { name: "announcement", title: "Announcement Bar" },
+    { name: "seo", title: "SEO & Branding" },
   ],
   fields: [
     defineField({
@@ -76,6 +77,34 @@ export const storeSettingsType = defineType({
       type: "string",
       group: "announcement",
     }),
+    // ---- SEO & branding (edited in Admin → SEO & Branding) ----
+    ...(
+      [
+        ["siteLogoUrl", "Site logo URL", "url"],
+        ["faviconUrl", "Favicon / app icon URL", "url"],
+        ["ogImageUrl", "Social share image (OG) URL", "url"],
+        ["themeColor", "Browser theme color", "string"],
+        ["seoTitle", "Home page title", "string"],
+        ["seoTitleTemplate", "Title template (%s = page title)", "string"],
+        ["seoDescription", "Meta description", "text"],
+        ["seoKeywords", "Keywords (comma separated)", "string"],
+        ["noindex", "Hide site from search engines", "boolean"],
+        ["googleVerification", "Google Search Console code", "string"],
+        ["bingVerification", "Bing Webmaster code", "string"],
+        ["facebookDomainVerification", "Facebook domain verification", "string"],
+        ["twitterHandle", "X / Twitter handle", "string"],
+        ["facebookUrl", "Facebook page", "url"],
+        ["instagramUrl", "Instagram", "url"],
+        ["twitterUrl", "X / Twitter", "url"],
+        ["youtubeUrl", "YouTube", "url"],
+        ["linkedinUrl", "LinkedIn", "url"],
+        ["tiktokUrl", "TikTok", "url"],
+        ["googleAnalyticsId", "Google Analytics 4 ID", "string"],
+        ["googleTagManagerId", "Google Tag Manager ID", "string"],
+        ["facebookPixelId", "Meta (Facebook) Pixel ID", "string"],
+        ["adsenseClientId", "Google AdSense publisher ID", "string"],
+      ] as const
+    ).map(([name, title, type]) => defineField({ name, title, type, group: "seo" })),
     defineField({
       name: "updatedAt",
       title: "Updated At",

@@ -1,5 +1,8 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 
 interface Props {
   className?: string;
@@ -31,10 +34,27 @@ export const LogoMark = ({ className }: { className?: string }) => (
 
 const Logo = ({ className, variant = "default", inverted = false }: Props) => {
   const small = variant === "sm";
+  const { storeName, siteLogoUrl } = useSiteSettings();
+
+  // Uploaded logo (Admin → SEO & Branding) replaces the built-in mark + wordmark
+  if (siteLogoUrl) {
+    return (
+      <Link href="/" aria-label={`${storeName} home`} className={cn("inline-flex items-center", className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={siteLogoUrl}
+          alt={storeName}
+          className={cn("w-auto object-contain", small ? "h-8" : "h-9 sm:h-10", inverted && "brightness-0 invert")}
+        />
+      </Link>
+    );
+  }
+
+  const split = storeName.match(/^(Web)(Haat)$/i);
   return (
     <Link
       href="/"
-      aria-label="WebHaat home"
+      aria-label={`${storeName} home`}
       className={cn("group inline-flex items-center gap-2.5", className)}
     >
       <LogoMark
@@ -50,7 +70,14 @@ const Logo = ({ className, variant = "default", inverted = false }: Props) => {
           inverted ? "text-cream" : "text-ink"
         )}
       >
-        Web<span className="italic text-clay">Haat</span>
+        {split ? (
+          <>
+            {split[1]}
+            <span className="italic text-clay">{split[2]}</span>
+          </>
+        ) : (
+          storeName
+        )}
       </span>
     </Link>
   );

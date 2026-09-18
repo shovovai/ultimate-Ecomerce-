@@ -251,7 +251,7 @@ export default function ProductFormDialog({ open, productId, onOpenChange, onSav
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="p-discount">Discount shown (%)</Label>
-                <Input id="p-discount" type="number" min="0" max="100" step="1" value={form.discount} onChange={(e) => set("discount", e.target.value)} />
+                <Input id="p-discount" type="number" min="0" max="99" step="1" value={form.discount} onChange={(e) => set("discount", e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="p-stock">Stock *</Label>

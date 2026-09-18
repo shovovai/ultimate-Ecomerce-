@@ -757,3 +757,22 @@
     @apply grid gap-3 p-4;
   }
 }
+
+/* ---- App-like mobile polish ---- */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-padding-top: 7rem;
+  }
+  @media (max-width: 1023px) {
+    body {
+      overscroll-behavior-y: none;
+    }
+    /* Inputs ≥16px so iOS doesn't zoom when focusing a field */
+    input,
+    select,
+    textarea {
+      font-size: max(16px, 1em);
+    }
+  }
+}

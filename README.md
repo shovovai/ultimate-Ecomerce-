@@ -40,7 +40,8 @@ This document explains what the system does, where data is stored, how it is set
 - Premium and Business account applications (business accounts get extra discount)
 - Blog, FAQ, contact, help, privacy and terms pages
 - Newsletter subscription and one-click unsubscribe page
-- SEO: metadata, Open Graph, JSON-LD, `sitemap.xml`, `robots.txt`
+- SEO: editable titles/descriptions, Open Graph & X cards (auto-generated share image), JSON-LD (Organization, WebSite search box, products, breadcrumbs), image `sitemap.xml`, `robots.txt`, verification tags
+- Installable, app-like mobile experience: bottom navigation dock, compact header, sticky buy/checkout bars, web app manifest ("Add to Home Screen")
 - Announcement bar controlled from the admin panel
 
 ### Admin panel (`/admin`)
@@ -60,6 +61,7 @@ This document explains what the system does, where data is stored, how it is set
 | **Email Marketing** | Compose and send newsletter campaigns (with test send and campaign history); manage and export subscribers |
 | **Notifications** | Send in-app notifications to users and view sent history |
 | **Employees** | Assign staff roles, suspend or activate staff, view performance |
+| **SEO & Branding** | Upload store logo, favicon/app icon and social share image; home title, title template, meta description, keywords (with Google preview); social profile links; Google/Bing/Facebook verification; hide-from-search switch; Google Analytics 4, Tag Manager, Meta Pixel and AdSense IDs |
 | **Settings** | Admin panel title, logo and accent color; store name, support contact, currency symbol; storefront announcement bar |
 
 ### Employee portal (`/employee`)
@@ -381,6 +383,19 @@ Every action is recorded on the order (who did it and when) and in its status hi
 | Open Graph image | add `public/og-image.jpg` (1200×630) |
 
 ---
+
+### SEO checklist after launch
+
+1. **Admin → SEO & Branding**: upload the logo, a square 512×512 PNG icon and a 1200×630 share image; write the home title (30–60 characters) and description (70–160 characters).
+2. Verify the domain in **Google Search Console** (paste the HTML-tag code) and **Bing Webmaster Tools**.
+3. Submit `https://your-domain/sitemap.xml` in both. The sitemap lists every product (with image), category, brand and blog post and refreshes hourly.
+4. Add your GA4 / Meta Pixel IDs to start tracking.
+5. Make sure *Hide the whole store from search engines* is **off** on the live site.
+
+### Mobile app experience
+
+- Phones and tablets get a floating bottom navigation (Home, Browse, Search, Cart with count, Account), a compact header whose search row hides while scrolling, and sticky "Add to cart" / "Checkout" bars.
+- The site ships a web app manifest (`/manifest.webmanifest`), so customers can **Add to Home Screen** on Android/iOS and open it full-screen like an app. The icon and theme color come from Admin → SEO & Branding.
 
 ## 11. Deployment
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { RotateCcw, Share2, ShieldCheck, Star, Truck, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import AddToCartButton from "@/components/AddToCartButton";
@@ -25,6 +25,17 @@ const ProductContent = ({ product, relatedProducts, brand }: ProductContentProps
   const totalReviews = product?.totalReviews || 0;
   const brandName = brand?.[0]?.brandName;
   const stock = product?.stock ?? 0;
+
+  // Phones: show a sticky buy bar once the main "Add to cart" scrolls out of view
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  useEffect(() => {
+    const el = ctaRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setShowStickyBar(!entry.isIntersecting && entry.boundingClientRect.top < 0));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (product) {
@@ -122,7 +133,7 @@ const ProductContent = ({ product, relatedProducts, brand }: ProductContentProps
               {stock === 0 ? "Out of stock" : stock <= 5 ? `Only ${stock} left — order soon` : "In stock, ready to ship"}
             </p>
 
-            <div className="mt-5 flex items-center gap-3">
+            <div ref={ctaRef} className="mt-5 flex items-center gap-3">
               <div className="flex-1">
                 <AddToCartButton product={product} className="h-12 text-base" />
               </div>
@@ -162,6 +173,22 @@ const ProductContent = ({ product, relatedProducts, brand }: ProductContentProps
       </section>
 
       <RelatedProducts currentProduct={product} relatedProducts={relatedProducts} />
+
+      <div
+        className={`fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 transition-all duration-300 lg:hidden ${
+          showStickyBar ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
+        }`}
+      >
+        <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-white/95 p-2 pl-4 shadow-[0_10px_30px_-10px_rgba(31,26,23,0.35)] ring-1 ring-ink/10 backdrop-blur">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs text-light-color">{product?.name}</p>
+            <p className="font-display text-lg leading-tight text-ink">{formatPrice(product?.price)}</p>
+          </div>
+          <div className="w-40 shrink-0">
+            <AddToCartButton product={product} compact />
+          </div>
+        </div>
+      </div>
     </Container>
   );
 };

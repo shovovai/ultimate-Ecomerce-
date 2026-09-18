@@ -14,6 +14,7 @@ const QUERIES = {
       && (!defined($selectedCategory) || references(*[_type == "category" && slug.current == $selectedCategory]._id))
       && (!defined($selectedBrand) || references(*[_type == "brand" && slug.current == $selectedBrand]._id))
       && price >= $minPrice && price <= $maxPrice
+      && (!defined($search) || name match $search || description match $search)
     ] | order(name asc) ${PRODUCT_PROJECTION}`,
 } as const;
 
@@ -28,13 +29,16 @@ function paramsFor(action: Action, p: Record<string, unknown>) {
       const term = (str(p.search, 60) || "").replace(/[*"\\]/g, "").trim();
       return term ? { search: `${term}*` } : null;
     }
-    case "shop":
+    case "shop": {
+      const term = (str(p.search, 60) || "").replace(/[*"\\]/g, "").trim();
       return {
+        search: term ? `${term}*` : null,
         selectedCategory: str(p.selectedCategory),
         selectedBrand: str(p.selectedBrand),
         minPrice: num(p.minPrice, 0),
         maxPrice: num(p.maxPrice, 1_000_000_000),
       };
+    }
     default:
       return {};
   }

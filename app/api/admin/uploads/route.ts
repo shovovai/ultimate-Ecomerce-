@@ -3,7 +3,16 @@ import { requireAdmin } from "@/lib/adminAuth";
 import { backendClient } from "@/sanity/lib/backendClient";
 
 const MAX_BYTES = 8 * 1024 * 1024;
-const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+const ALLOWED = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+  "image/svg+xml",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+];
 
 // POST multipart/form-data { file } → uploads an image asset to Sanity
 export async function POST(request: NextRequest) {
@@ -18,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
     if (!ALLOWED.includes(file.type)) {
       return NextResponse.json(
-        { error: "Only JPG, PNG, WebP, GIF or AVIF images are allowed" },
+        { error: "Only JPG, PNG, WebP, GIF, AVIF, SVG or ICO images are allowed" },
         { status: 400 }
       );
     }

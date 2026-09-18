@@ -6,13 +6,15 @@ import ShopByBrands from "@/components/ShopByBrands";
 import LatestBlog from "@/components/LatestBlog";
 import { getCategories } from "@/sanity/queries";
 import { generateOrganizationSchema, generateWebsiteSchema } from "@/lib/seo";
+import { getSiteSettings } from "@/lib/siteSeo";
 
 export default async function Home() {
   // 9 = one featured tile (2x2) + 8 regular tiles → three full rows
   const categories = await getCategories(9);
 
-  const organizationSchema = generateOrganizationSchema();
-  const websiteSchema = generateWebsiteSchema();
+  const settings = await getSiteSettings();
+  const organizationSchema = generateOrganizationSchema(settings);
+  const websiteSchema = generateWebsiteSchema(settings);
 
   return (
     <div className="pb-4">

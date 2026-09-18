@@ -9,6 +9,7 @@ import {
   Bell,
   ExternalLink,
   FileBarChart,
+  Globe,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -72,6 +73,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     title: "Team & System",
     items: [
       { label: "Employees", href: "/admin/employees", icon: UsersRound },
+      { label: "SEO & Branding", href: "/admin/seo", icon: Globe },
       { label: "Settings", href: "/admin/settings", icon: Settings },
     ],
   },

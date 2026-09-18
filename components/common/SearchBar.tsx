@@ -9,6 +9,7 @@ import { Product } from "@/sanity.types";
 import PriceView from "../PriceView";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useOutsideClick } from "@/hooks";
 
 const SearchBar = () => {
@@ -19,6 +20,7 @@ const SearchBar = () => {
   const [featuredProduct, setFeaturedProduct] = useState([]);
   const [isMac, setIsMac] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const modalRef = useOutsideClick<HTMLDivElement>(() => setShowSearch(false));
 
   // Detect if user is on Mac
@@ -46,6 +48,13 @@ const SearchBar = () => {
       return () => clearTimeout(timeoutId); // Cleanup timeout
     }
   }, [showSearch, fetchFeaturedProducts]);
+
+  // Other components (e.g. the mobile bottom nav) open search via this event
+  useEffect(() => {
+    const open = () => setShowSearch(true);
+    window.addEventListener("open-search", open);
+    return () => window.removeEventListener("open-search", open);
+  }, []);
 
   // Handle escape key to close modal and Ctrl+K to open modal
   useEffect(() => {
@@ -131,14 +140,7 @@ const SearchBar = () => {
           </div>
         </button>
 
-        {/* Mobile Version - Icon Only */}
-        <button
-          onClick={() => setShowSearch(true)}
-          className="group flex sm:hidden items-center justify-center p-2.5 bg-sand hover:bg-white rounded-full hoverEffect"
-          aria-label="Open search"
-        >
-          <Search className="w-4 h-4 text-gray-400 group-hover:text-shop_dark_green transition-colors duration-200" />
-        </button>
+        {/* On phones the search pill lives in the header's second row (see ClientHeader) */}
       </div>
 
       {/* Search Modal Overlay */}
@@ -187,7 +189,16 @@ const SearchBar = () => {
               </div>
 
               {/* Search Input */}
-              <form className="relative" onSubmit={(e) => e.preventDefault()}>
+              <form
+                className="relative"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (search.trim()) {
+                    setShowSearch(false);
+                    router.push(`/shop?search=${encodeURIComponent(search.trim())}`);
+                  }
+                }}
+              >
                 <div className="relative">
                   <Input
                     ref={inputRef}

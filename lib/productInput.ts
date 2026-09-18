@@ -26,8 +26,8 @@ export function parseProductInput(
   if (!(price >= 0)) return { ok: false, error: "Price must be 0 or more" };
 
   const discount = body.discount === "" || body.discount == null ? 0 : Number(body.discount);
-  if (!(discount >= 0 && discount <= 100)) {
-    return { ok: false, error: "Discount must be between 0 and 100" };
+  if (!(discount >= 0 && discount < 100)) {
+    return { ok: false, error: "Discount must be between 0 and 99" };
   }
 
   const stock = body.stock === "" || body.stock == null ? 0 : Math.floor(Number(body.stock));

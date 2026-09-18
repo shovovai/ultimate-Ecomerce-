@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { ClerkLoaded, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
-import { Flame, LifeBuoy, Truck, UserRound } from "lucide-react";
+import { Flame, LifeBuoy, Search, Truck, UserRound } from "lucide-react";
 import Container from "./Container";
 import HeaderMenu from "./layout/HeaderMenu";
 import Logo from "./common/Logo";
@@ -15,6 +15,7 @@ import NotificationBell from "./NotificationBell";
 import UserDropdown from "./UserDropdown";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { openSearch } from "./layout/BottomNav";
 
 const iconWrap =
   "flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand transition-colors";
@@ -25,10 +26,20 @@ const ClientHeader = () => {
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Phones: hide the search row while scrolling down, show it again on scroll up
+  const [compact, setCompact] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 8);
+      if (Math.abs(y - lastY) > 6) {
+        setCompact(y > 120 && y > lastY);
+        lastY = y;
+      }
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -60,7 +71,7 @@ const ClientHeader = () => {
     >
       <Container>
         {/* Main row */}
-        <div className="flex h-16 items-center gap-3 sm:h-[4.5rem] lg:h-20 lg:gap-10">
+        <div className="flex h-14 items-center gap-3 sm:h-[4.5rem] lg:h-20 lg:gap-10">
           <div className="flex shrink-0 items-center gap-1">
             <MobileMenu />
             <Logo />
@@ -73,15 +84,15 @@ const ClientHeader = () => {
           </div>
 
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-            <div className={cn(iconWrap, "hidden md:flex")}>
+            <div className={cn(iconWrap, "hidden sm:flex")}>
               <FavoriteButton />
             </div>
-            <div className={iconWrap}>
+            <div className={cn(iconWrap, "hidden lg:flex")}>
               <CartIcon />
             </div>
             <ClerkLoaded>
               <SignedIn>
-                <div className={cn(iconWrap, "hidden md:flex")}>
+                <div className={iconWrap}>
                   <NotificationBell />
                 </div>
                 <div className="ml-1">
@@ -91,7 +102,7 @@ const ClientHeader = () => {
               <SignedOut>
                 <Link
                   href={authUrl("/sign-in")}
-                  className="ml-1 inline-flex items-center gap-2 rounded-full bg-ink px-3 py-2 text-sm font-semibold text-cream transition-colors hover:bg-clay sm:px-4"
+                  className="ml-1 hidden items-center gap-2 rounded-full bg-ink px-3 py-2 text-sm font-semibold text-cream transition-colors hover:bg-clay sm:inline-flex sm:px-4"
                 >
                   <UserRound className="h-4 w-4" />
                   <span className="hidden sm:inline">Sign in</span>
@@ -107,6 +118,24 @@ const ClientHeader = () => {
           </div>
         </div>
 
+        {/* Phone search row (collapses while scrolling down) */}
+        <div
+          className={cn(
+            "grid transition-all duration-300 sm:hidden",
+            compact ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] pb-3 opacity-100"
+          )}
+        >
+          <div className="overflow-hidden">
+            <button
+              type="button"
+              onClick={openSearch}
+              className="flex h-11 w-full items-center gap-3 rounded-2xl bg-sand px-4 text-left text-sm text-light-color ring-1 ring-ink/5 active:scale-[0.99]"
+            >
+              <Search className="h-4 w-4 text-ink/60" />
+              Search products, brands…
+            </button>
+          </div>
+        </div>
       </Container>
 
       {/* Navigation band (desktop) */}
