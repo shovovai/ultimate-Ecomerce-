@@ -1,5 +1,6 @@
 "use client";
 import { headerData } from "@/constants";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -7,27 +8,26 @@ const HeaderMenu = () => {
   const pathname = usePathname();
 
   return (
-    <div className="hidden md:inline-flex w-full items-center justify-center gap-7 text-sm capitalize font-semibold text-light-color">
-      {headerData?.map((item) => (
-        <Link
-          key={item?.title}
-          href={item?.href}
-          className={`hover:text-shop_light_green hoverEffect relative group ${pathname === item?.href && "text-shop_light_green"}`}
-        >
-          {item?.title}
-          <span
-            className={`absolute -bottom-0.5 left-1/2 w-0 h-0.5 bg-shop_light_green transition-all duration-300 group-hover:w-1/2 group-hover:left-0 ${
-              pathname === item?.href && "w-1/2"
-            }`}
-          />
-          <span
-            className={`absolute -bottom-0.5 right-1/2 w-0 h-0.5 bg-shop_light_green transition-all duration-300 group-hover:w-1/2 group-hover:right-0 ${
-              pathname === item?.href && "w-1/2"
-            }`}
-          />
-        </Link>
-      ))}
-    </div>
+    <nav className="flex items-center gap-0.5 text-sm font-medium">
+      {headerData.map((item) => {
+        const active =
+          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        return (
+          <Link
+            key={item.title}
+            href={item.href}
+            className={cn(
+              "rounded-full px-4 py-2 transition-all",
+              active
+                ? "bg-ink text-cream shadow-sm"
+                : "text-ink/70 hover:bg-white hover:text-ink"
+            )}
+          >
+            {item.title}
+          </Link>
+        );
+      })}
+    </nav>
   );
 };
 

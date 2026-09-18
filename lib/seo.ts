@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/storeConfig";
 import { Metadata } from "next";
 import { brand } from "@/config/brand";
 import { Product, Category } from "@/sanity.types";
@@ -13,7 +14,7 @@ export function generateProductMetadata(product: any): Metadata {
   const description =
     product.description ||
     `Buy ${title} online at WebHaat. ${
-      product.price ? `Price: $${product.price}` : ""
+      product.price ? `Price: ${formatPrice(product.price)}` : ""
     }`;
   const imageUrl = product.images?.[0]
     ? urlFor(product.images[0]).url()

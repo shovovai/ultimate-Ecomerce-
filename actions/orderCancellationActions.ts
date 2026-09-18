@@ -1,4 +1,6 @@
 "use server";
+import { restoreOrderStock } from "@/lib/stock";
+import { formatPrice } from "@/lib/storeConfig";
 
 import { auth } from "@clerk/nextjs/server";
 import { backendClient } from "@/sanity/lib/backendClient";
@@ -105,6 +107,7 @@ export async function approveCancellationRequest(
         cancellationRequested: false,
       })
       .commit();
+    await restoreOrderStock(orderId);
 
     // Send notification to customer
     try {
@@ -125,9 +128,7 @@ export async function approveCancellationRequest(
     revalidatePath("/user/orders");
 
     const message = shouldRefund
-      ? `Cancellation approved. $${refundAmount.toFixed(
-          2
-        )} has been credited to the customer's wallet.`
+      ? `Cancellation approved. ${formatPrice(refundAmount)} has been credited to the customer's wallet.`
       : "Cancellation approved successfully.";
 
     return { success: true, message };
@@ -333,6 +334,7 @@ export async function cancelOrder(
         refundAmount: walletRefunded ? refundAmount : 0,
       })
       .commit();
+    await restoreOrderStock(orderId);
 
     // Send notification to customer
     try {
@@ -350,9 +352,7 @@ export async function cancelOrder(
     }
 
     const message = shouldRefund
-      ? `Order cancelled successfully. $${refundAmount.toFixed(
-          2
-        )} has been credited to the customer's wallet.`
+      ? `Order cancelled successfully. ${formatPrice(refundAmount)} has been credited to the customer's wallet.`
       : "Order cancelled successfully.";
 
     return {

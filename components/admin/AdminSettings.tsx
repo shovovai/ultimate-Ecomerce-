@@ -24,7 +24,7 @@ interface Settings {
   updatedBy?: string;
 }
 
-const PRESET_COLORS = ["#063c28", "#1d4ed8", "#7c3aed", "#be123c", "#c2410c", "#0f766e", "#111827"];
+const PRESET_COLORS = ["#c2542d", "#1f1a17", "#063c28", "#1d4ed8", "#7c3aed", "#be123c", "#c2410c", "#0f766e"];
 
 function Section({
   icon: Icon,

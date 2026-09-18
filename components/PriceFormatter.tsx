@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { twMerge } from "tailwind-merge";
+import { formatPrice } from "@/lib/storeConfig";
 
 interface Props {
   amount: number | undefined;
@@ -7,16 +8,9 @@ interface Props {
 }
 
 const PriceFormatter = memo(({ amount, className }: Props) => {
-  const formattedPrice = new Number(amount).toLocaleString("en-US", {
-    currency: "USD",
-    style: "currency",
-    minimumFractionDigits: 2,
-  });
   return (
-    <span
-      className={twMerge("text-sm font-semibold text-dark-color", className)}
-    >
-      {formattedPrice}
+    <span className={twMerge("text-sm font-semibold text-dark-color", className)}>
+      {formatPrice(amount)}
     </span>
   );
 });

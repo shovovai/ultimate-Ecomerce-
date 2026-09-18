@@ -1,4 +1,5 @@
 "use server";
+import { formatPrice } from "@/lib/storeConfig";
 
 import { auth } from "@clerk/nextjs/server";
 import { backendClient } from "@/sanity/lib/backendClient";
@@ -234,9 +235,7 @@ export async function requestWithdrawal(data: {
     if (currentBalance < data.amount) {
       return {
         success: false,
-        message: `Insufficient balance. Available: $${currentBalance.toFixed(
-          2
-        )}`,
+        message: `Insufficient balance. Available: ${formatPrice(currentBalance)}`,
       };
     }
 

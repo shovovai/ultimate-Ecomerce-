@@ -86,7 +86,7 @@ export default function AdminEmailCampaign() {
     <div className="grid gap-6 p-6 xl:grid-cols-3">
       <div className="space-y-4 xl:col-span-2">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-[var(--admin-accent,#063c28)] p-2">
+          <div className="rounded-lg bg-[var(--admin-accent,#c2542d)] p-2">
             <Mail className="h-5 w-5 text-white" />
           </div>
           <div>

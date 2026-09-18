@@ -1,4 +1,4 @@
-// Firebase configuration and initialization
+// Firebase configuration and initialization (optional — analytics only)
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
 
@@ -12,20 +12,25 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-let app: FirebaseApp;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
+// Skip Firebase entirely when it isn't configured in .env
+const isConfigured = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId
+);
+
+let app: FirebaseApp | null = null;
+if (isConfigured) {
+  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 }
 
 let analytics: Analytics | null = null;
-if (typeof window !== "undefined") {
-  isSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
+if (app && typeof window !== "undefined") {
+  isSupported()
+    .then((supported) => {
+      if (supported && app) analytics = getAnalytics(app);
+    })
+    .catch(() => {
+      analytics = null;
+    });
 }
 
 export { app, analytics };

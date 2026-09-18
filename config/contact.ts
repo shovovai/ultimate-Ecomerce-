@@ -48,7 +48,7 @@ export const contactConfig = {
   },
   support: {
     helpCenter: "/help",
-    faq: "/faqs",
+    faq: "/faq",
     trackOrder: "/track-order",
     returns: "/returns",
     shipping: "/shipping",

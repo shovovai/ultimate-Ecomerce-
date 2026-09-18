@@ -1,87 +1,57 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
 
 interface Props {
   className?: string;
   variant?: "default" | "sm";
+  /** Use on dark backgrounds */
+  inverted?: boolean;
 }
 
-const Logo = ({ className, variant = "default" }: Props) => {
-  // Small variant for footer
-  if (variant === "sm") {
-    return (
-      <Link href={"/"}>
-        <div
-          className={cn(
-            "flex items-center gap-1.5 group hoverEffect",
-            className
-          )}
-        >
-          {/* Cart Icon with Creative Styling (smaller) */}
-          <div className="relative">
-            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-shop_orange rounded-full animate-pulse group-hover:bg-shop_light_green hoverEffect"></div>
-            <ShoppingCart
-              className="w-5 h-5 text-shop_dark_green group-hover:text-shop_light_green hoverEffect transform group-hover:scale-110"
-              strokeWidth={2.5}
-            />
-          </div>
+// WebHaat mark: a market-stall awning over a basket
+export const LogoMark = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 40 40" className={cn("shrink-0", className)} aria-hidden="true">
+    <rect width="40" height="40" rx="11" className="fill-clay" />
+    <path
+      d="M8 15.5 11 9h18l3 6.5c0 2-1.6 3.5-3.5 3.5S25 17.5 25 15.5c0 2-1.6 3.5-3.5 3.5h-3c-1.9 0-3.5-1.5-3.5-3.5 0 2-1.6 3.5-3.5 3.5S8 17.5 8 15.5Z"
+      className="fill-cream"
+    />
+    <path
+      d="M11 21.5h18l-1.6 8.3a2 2 0 0 1-2 1.7H14.6a2 2 0 0 1-2-1.7L11 21.5Z"
+      className="fill-cream"
+    />
+    <path
+      d="M16 24.5v4M20 24.5v4M24 24.5v4"
+      className="stroke-clay"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
 
-          {/* Text Logo (smaller) */}
-          <div className="flex items-center">
-            <h1 className="text-sm font-black tracking-wider uppercase font-sans">
-              <span className="text-shop_dark_green group-hover:text-shop_light_green hoverEffect">
-                Web
-              </span>
-              <span className="bg-gradient-to-r from-shop_light_green to-shop_orange bg-clip-text text-transparent group-hover:from-shop_dark_green group-hover:to-shop_light_green hoverEffect">
-                haat
-              </span>
-            </h1>
-
-            {/* Decorative Elements (smaller) */}
-            <div className="ml-0.5 flex flex-col gap-0.5">
-              <div className="w-0.5 h-0.5 bg-shop_orange rounded-full group-hover:bg-shop_light_green hoverEffect"></div>
-              <div className="w-0.5 h-0.5 bg-shop_light_green rounded-full group-hover:bg-shop_orange hoverEffect"></div>
-            </div>
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
-  // Default full logo
+const Logo = ({ className, variant = "default", inverted = false }: Props) => {
+  const small = variant === "sm";
   return (
-    <Link href={"/"}>
-      <div
-        className={cn("flex items-center gap-2 group hoverEffect", className)}
+    <Link
+      href="/"
+      aria-label="WebHaat home"
+      className={cn("group inline-flex items-center gap-2.5", className)}
+    >
+      <LogoMark
+        className={cn(
+          "transition-transform duration-300 group-hover:-rotate-6",
+          small ? "h-8 w-8" : "h-9 w-9 sm:h-10 sm:w-10"
+        )}
+      />
+      <span
+        className={cn(
+          "font-display font-semibold leading-none tracking-tight",
+          small ? "text-xl" : "text-2xl sm:text-[1.7rem]",
+          inverted ? "text-cream" : "text-ink"
+        )}
       >
-        {/* Cart Icon with Creative Styling */}
-        <div className="relative">
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-shop_orange rounded-full animate-pulse group-hover:bg-shop_light_green hoverEffect"></div>
-          <ShoppingCart
-            className="w-8 h-8 text-shop_dark_green group-hover:text-shop_light_green hoverEffect transform group-hover:scale-110"
-            strokeWidth={2.5}
-          />
-        </div>
-
-        {/* Text Logo */}
-        <div className="flex items-center">
-          <h1 className="text-2xl font-black tracking-wider uppercase font-sans">
-            <span className="text-shop_dark_green group-hover:text-shop_light_green hoverEffect">
-              Web
-            </span>
-            <span className="bg-gradient-to-r from-shop_light_green to-shop_orange bg-clip-text text-transparent group-hover:from-shop_dark_green group-hover:to-shop_light_green hoverEffect">
-              haat
-            </span>
-          </h1>
-
-          {/* Decorative Elements */}
-          <div className="ml-1 flex flex-col gap-0.5">
-            <div className="w-1 h-1 bg-shop_orange rounded-full group-hover:bg-shop_light_green hoverEffect"></div>
-            <div className="w-1 h-1 bg-shop_light_green rounded-full group-hover:bg-shop_orange hoverEffect"></div>
-          </div>
-        </div>
-      </div>
+        Web<span className="italic text-clay">Haat</span>
+      </span>
     </Link>
   );
 };

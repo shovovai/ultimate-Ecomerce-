@@ -2,12 +2,15 @@ import { createClient } from "next-sanity";
 
 import { apiVersion, dataset, projectId } from "../env";
 
-// Read-only client for fetching data (uses CDN for better performance)
+// Read-only client for fetching data (uses CDN for better performance).
+// Server-only: the read token lets it work with a PRIVATE dataset (recommended,
+// so orders and customer data are not publicly readable).
 export const client = createClient({
   projectId,
   dataset,
   apiVersion,
   useCdn: true, // Set to false if statically generating pages, using ISR or tag-based revalidation
+  token: process.env.SANITY_API_READ_TOKEN,
   stega: {
     studioUrl:
       process.env.NODE_ENV === "production"

@@ -8,7 +8,7 @@ import { GET_ALL_BLOGResult } from "@/sanity.types";
 import { urlFor } from "@/sanity/lib/image";
 import { getAllBlogs } from "@/sanity/queries";
 import dayjs from "dayjs";
-import { Calendar, Clock, ArrowRight, User, Eye, BookOpen } from "lucide-react";
+import { Calendar, Clock, ArrowRight, BookOpen } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -80,34 +80,10 @@ const BlogPage = async () => {
                 of articles.
               </p>
 
-              {/* Blog Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-md mx-auto">
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
-                  <div className="flex items-center gap-2 text-white/80 mb-1">
-                    <BookOpen className="w-4 h-4" />
-                    <span className="text-xs sm:text-sm">Articles</span>
-                  </div>
-                  <p className="text-xl sm:text-2xl font-bold">
-                    {blogs?.length || 0}
-                  </p>
-                </div>
-
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
-                  <div className="flex items-center gap-2 text-white/80 mb-1">
-                    <Eye className="w-4 h-4" />
-                    <span className="text-xs sm:text-sm">Readers</span>
-                  </div>
-                  <p className="text-xl sm:text-2xl font-bold">15K+</p>
-                </div>
-
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4 col-span-2 sm:col-span-1">
-                  <div className="flex items-center gap-2 text-white/80 mb-1">
-                    <User className="w-4 h-4" />
-                    <span className="text-xs sm:text-sm">Authors</span>
-                  </div>
-                  <p className="text-xl sm:text-2xl font-bold">5+</p>
-                </div>
-              </div>
+              <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm">
+                <BookOpen className="w-4 h-4" />
+                {blogs?.length || 0} article{blogs?.length === 1 ? "" : "s"}
+              </p>
             </div>
           </CardContent>
         </Card>

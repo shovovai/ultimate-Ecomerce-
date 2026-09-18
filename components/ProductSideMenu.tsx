@@ -42,12 +42,14 @@ const ProductSideMenu = ({
     }
   };
   return (
-    <div className={cn("absolute top-2 right-2", className)}>
+    <div className={cn("absolute top-3 right-3", className)}>
       <div
         onClick={handleFavorite}
-        className={`p-2.5 rounded-full hover:bg-shop_dark_green/80 hover:text-white hoverEffect ${existingProduct ? "bg-shop_dark_green/80 text-white" : "bg-product-bg"}`}
+        role="button"
+        aria-label={existingProduct ? "Remove from wishlist" : "Add to wishlist"}
+        className={`flex h-9 w-9 items-center justify-center rounded-full shadow-sm hoverEffect ${existingProduct ? "bg-clay text-white" : "bg-white text-ink hover:text-clay"}`}
       >
-        <Heart size={15} />
+        <Heart size={16} className={existingProduct ? "fill-current" : ""} />
       </div>
     </div>
   );

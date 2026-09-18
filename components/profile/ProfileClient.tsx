@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/lib/storeConfig";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -302,7 +303,7 @@ export default function ProfileClient({ userData }: ProfileClientProps) {
               <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                 <span className="text-gray-700">Total Spent</span>
                 <span className="font-bold text-green-600">
-                  ${sanity?.totalSpent || 0}
+                  {formatPrice(sanity?.totalSpent)}
                 </span>
               </div>
 

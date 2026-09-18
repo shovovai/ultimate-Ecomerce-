@@ -13,14 +13,14 @@ const CartIcon = () => {
       <ShoppingBag className="group-hover:text-shop_light_green hoverEffect" />
       {itemCount > 0 ? (
         <span
-          className={`absolute -top-1 -right-1 bg-shop_btn_dark_green text-white rounded-full text-xs font-semibold flex items-center justify-center min-w-[14px] h-[14px] ${
+          className={`absolute -top-1 -right-1 bg-clay text-white rounded-full text-[10px] ring-2 ring-cream font-semibold flex items-center justify-center min-w-[16px] h-[16px] ${
             itemCount > 9 ? "px-1" : ""
           }`}
         >
           {displayCount}
         </span>
       ) : (
-        <span className="absolute -top-1 -right-1 bg-shop_btn_dark_green text-white rounded-full text-xs font-semibold flex items-center justify-center min-w-[14px]">
+        <span className="absolute -top-1 -right-1 bg-clay text-white rounded-full text-[10px] ring-2 ring-cream font-semibold flex items-center justify-center min-w-[16px] h-[16px]">
           0
         </span>
       )}

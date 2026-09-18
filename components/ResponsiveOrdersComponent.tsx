@@ -87,12 +87,8 @@ const ResponsiveOrdersComponent = ({
   const handlePayNow = async (orderId: string) => {
     if (!orderId) return;
 
-    // Find the order to get details for the modal
-    const order = orders.find((o) => o._id === orderId);
-    if (order) {
-      setSelectedOrder(order);
-      setPaymentModalOpen(true);
-    }
+    // Payment page lists every online method configured for the store
+    window.location.href = `/checkout?orderId=${orderId}`;
   };
 
   const handlePaymentModalClose = () => {

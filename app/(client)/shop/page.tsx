@@ -6,10 +6,10 @@ const ShopPage = async () => {
   const categories = await getCategories();
   const brands = await getAllBrands();
   return (
-    <div className="bg-white min-h-screen">
+    <div className="min-h-screen">
       <Suspense
         fallback={
-          <div className="min-h-96 bg-gray-50 animate-pulse rounded-lg" />
+          <div className="min-h-96 animate-pulse" />
         }
       >
         <Shop categories={categories} brands={brands} />

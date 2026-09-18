@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/storeConfig";
 import { client } from "../sanity/lib/client";
 
 async function checkOrders() {
@@ -27,7 +28,7 @@ async function checkOrders() {
         console.log(`\n${index + 1}. Order #${order.orderNumber}`);
         console.log(`   Customer: ${order.customerName} (${order.email})`);
         console.log(`   Status: ${order.status}`);
-        console.log(`   Total: $${order.totalPrice}`);
+        console.log(`   Total: ${formatPrice(order.totalPrice)}`);
         console.log(
           `   Created: ${new Date(order._createdAt).toLocaleString()}`
         );

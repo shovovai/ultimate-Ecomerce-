@@ -98,7 +98,7 @@ function generateWelcomeEmailHTML(email: string): string {
         }
         
         .header {
-            background: linear-gradient(135deg, #063c28 0%, #3b9c3c 100%);
+            background: linear-gradient(135deg, #1f1a17 0%, #c2542d 100%);
             color: white;
             padding: 40px 20px;
             text-align: center;
@@ -125,7 +125,7 @@ function generateWelcomeEmailHTML(email: string): string {
         }
         
         .welcome-message h2 {
-            color: #063c28;
+            color: #1f1a17;
             font-size: 28px;
             margin-bottom: 15px;
         }
@@ -145,7 +145,7 @@ function generateWelcomeEmailHTML(email: string): string {
         }
         
         .benefits h3 {
-            color: #063c28;
+            color: #1f1a17;
             font-size: 22px;
             margin-bottom: 20px;
             text-align: center;
@@ -168,7 +168,7 @@ function generateWelcomeEmailHTML(email: string): string {
         }
         
         .benefit-text h4 {
-            color: #063c28;
+            color: #1f1a17;
             font-size: 16px;
             margin-bottom: 5px;
         }
@@ -186,7 +186,7 @@ function generateWelcomeEmailHTML(email: string): string {
         
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, #063c28 0%, #3b9c3c 100%);
+            background: linear-gradient(135deg, #1f1a17 0%, #c2542d 100%);
             color: white;
             padding: 15px 40px;
             text-decoration: none;
@@ -226,7 +226,7 @@ function generateWelcomeEmailHTML(email: string): string {
             color: #ffffff;
             padding: 40px 20px;
             text-align: center;
-            border-top: 4px solid #063c28;
+            border-top: 4px solid #1f1a17;
         }
         
         .footer p {

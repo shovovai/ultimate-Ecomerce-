@@ -5,7 +5,7 @@ const Header = () => {
   return (
     <Suspense
       fallback={
-        <div className="h-20 bg-white border-b border-gray-100 animate-pulse" />
+        <div className="h-16 sm:h-[4.5rem] lg:h-[8.6rem] bg-cream" />
       }
     >
       <ClientHeader />

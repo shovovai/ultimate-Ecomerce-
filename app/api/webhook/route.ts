@@ -47,6 +47,17 @@ export async function POST(req: NextRequest) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
+    // Only mark orders paid when Stripe confirms the money was collected and
+    // the charged amount matches what we asked for.
+    const expected = session.metadata?.expectedAmount;
+    if (
+      session.payment_status !== "paid" ||
+      (expected && String(session.amount_total) !== expected)
+    ) {
+      console.error("Stripe session not paid or amount mismatch", session.id);
+      return NextResponse.json({ received: true });
+    }
+
     try {
       // Get orderId from session metadata
       const orderId = session.metadata?.orderId;
@@ -303,10 +314,7 @@ async function updateOrderWithPaymentCompletion(
     );
 
     if (order) {
-      // Update stock levels for purchased products
-      if (order.products) {
-        await updateStockLevels(order.products);
-      }
+      // Stock is reserved when the order is created (see lib/stock.ts)
 
       // Send payment confirmation notification
       try {
@@ -334,37 +342,3 @@ async function updateOrderWithPaymentCompletion(
   }
 }
 
-// Function to update stock levels
-async function updateStockLevels(
-  orderProducts: Array<{
-    product: { _ref: string };
-    quantity: number;
-  }>
-) {
-  for (const orderProduct of orderProducts) {
-    try {
-      const productId = orderProduct.product._ref;
-      const quantity = orderProduct.quantity;
-
-      // Fetch current stock
-      const product = await backendClient.getDocument(productId);
-
-      if (!product || typeof product.stock !== "number") {
-        console.warn(
-          `Product with ID ${productId} not found or stock is invalid.`
-        );
-        continue;
-      }
-
-      const newStock = Math.max(product.stock - quantity, 0); // Ensure stock does not go negative
-
-      // Update stock in Sanity
-      await backendClient.patch(productId).set({ stock: newStock }).commit();
-    } catch (error) {
-      console.error(
-        `Failed to update stock for product ${orderProduct.product._ref}:`,
-        error
-      );
-    }
-  }
-}

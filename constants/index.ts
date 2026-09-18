@@ -1,8 +1,10 @@
 export const headerData = [
   { title: "Home", href: "/" },
   { title: "Shop", href: "/shop" },
-  { title: "Hot Deal", href: "/deal" },
+  { title: "Categories", href: "/category" },
+  { title: "Brands", href: "/brands" },
   { title: "Blog", href: "/blog" },
+  { title: "About", href: "/about" },
   { title: "Contact", href: "/contact" },
 ];
 
@@ -18,7 +20,7 @@ export const quickLinksData = [
   { title: "Contact us", href: "/contact" },
   { title: "Terms & Conditions", href: "/terms" },
   { title: "Privacy Policy", href: "/privacy" },
-  { title: "FAQs", href: "/faqs" },
+  { title: "FAQs", href: "/faq" },
   { title: "Help", href: "/help" },
 ];
 

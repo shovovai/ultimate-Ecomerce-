@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/storeConfig";
 import nodemailer, { Transporter, SentMessageInfo } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 
@@ -40,6 +41,9 @@ interface OrderConfirmationData {
   shipping: number;
   tax: number;
   total: number;
+  /** Coupon + business discounts */
+  discount?: number;
+  couponCode?: string;
   shippingAddress: ShippingAddress;
   estimatedDelivery?: string;
 }
@@ -58,7 +62,7 @@ interface SendMailParams {
 }
 
 const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number) => `${formatPrice(amount)}`;
 
   return `
 <!DOCTYPE html>
@@ -89,7 +93,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         }
         
         .header {
-            background: linear-gradient(135deg, #063c28 0%, #3b9c3c 100%);
+            background: linear-gradient(135deg, #1f1a17 0%, #c2542d 100%);
             color: white;
             padding: 30px 20px;
             text-align: center;
@@ -115,7 +119,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         }
         
         .greeting h2 {
-            color: #063c28;
+            color: #1f1a17;
             font-size: 22px;
             margin-bottom: 10px;
         }
@@ -140,7 +144,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         
         .order-id {
             font-weight: 700;
-            color: #063c28;
+            color: #1f1a17;
             font-size: 18px;
         }
         
@@ -196,7 +200,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         }
         
         .quantity {
-            background-color: #3b9c3c;
+            background-color: #c2542d;
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
@@ -206,7 +210,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         
         .price {
             font-weight: 700;
-            color: #063c28;
+            color: #1f1a17;
         }
         
         .totals {
@@ -238,12 +242,12 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         
         .total-row span:last-child {
             font-weight: 700;
-            color: #063c28;
+            color: #1f1a17;
             font-size: 18px;
         }
         
         .total-row.final {
-            background: linear-gradient(135deg, #063c28 0%, #3b9c3c 100%);
+            background: linear-gradient(135deg, #1f1a17 0%, #c2542d 100%);
             color: white;
             border-radius: 8px;
             padding: 20px;
@@ -280,7 +284,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         }
         
         .shipping-info h3 {
-            color: #063c28;
+            color: #1f1a17;
             margin-bottom: 15px;
             font-size: 18px;
             font-weight: 700;
@@ -300,7 +304,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         }
         
         .address strong {
-            color: #063c28;
+            color: #1f1a17;
             font-size: 16px;
         }
         
@@ -381,7 +385,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         }
         
         .support-section h3 {
-            color: #063c28;
+            color: #1f1a17;
             margin-bottom: 15px;
         }
         
@@ -398,7 +402,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
         }
         
         .contact-item strong {
-            color: #063c28;
+            color: #1f1a17;
             display: block;
             margin-bottom: 5px;
         }
@@ -408,7 +412,7 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
             color: #ffffff;
             padding: 40px 20px;
             text-align: center;
-            border-top: 4px solid #063c28;
+            border-top: 4px solid #1f1a17;
         }
         
         .footer p {
@@ -533,6 +537,14 @@ const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
                         <span>Subtotal:</span>
                         <span>${formatCurrency(data.subtotal)}</span>
                     </div>
+${
+                      data.discount
+                        ? `<div class="total-row">
+                        <span>Discount${data.couponCode ? ` (${data.couponCode})` : ""}:</span>
+                        <span>-${formatCurrency(data.discount)}</span>
+                    </div>`
+                        : ""
+                    }
                     <div class="total-row">
                         <span>Shipping:</span>
                         <span>${formatCurrency(data.shipping)}</span>
@@ -646,15 +658,15 @@ Thank you for your order! Here are the details:
 
 Order ID: ${data.orderId}
 Order Date: ${data.orderDate}
-Total: $${data.total.toFixed(2)}
+Total: ${formatPrice(data.total)}
 
 Items Ordered:
 ${data.items
   .map(
     (item) =>
-      `- ${item.name} (Qty: ${item.quantity}) - $${(
+      `- ${item.name} (Qty: ${item.quantity}) - ${formatPrice((
         item.price * item.quantity
-      ).toFixed(2)}`
+      ))}`
   )
   .join("\n")}
 

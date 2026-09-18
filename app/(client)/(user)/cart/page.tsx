@@ -1,24 +1,15 @@
+import type { Metadata } from "next";
 import Container from "@/components/Container";
-import { ClientCartContent } from "@/components/cart/ClientCartContent";
-import { ShoppingBag } from "lucide-react";
-import DynamicBreadcrumb from "@/components/DynamicBreadcrumb";
+import CartView from "@/components/cart/CartView";
 
-function CartPage() {
+export const metadata: Metadata = { title: "Your cart", robots: { index: false } };
+
+export default function CartPage() {
   return (
-    <Container className="py-6">
-      {/* Breadcrumb */}
-      <DynamicBreadcrumb />
-
-      {/* Cart Header */}
-      <div className="flex items-center gap-2 mb-6">
-        <ShoppingBag className="w-6 h-6" />
-        <h1 className="text-2xl font-bold">Shopping Cart</h1>
-      </div>
-
-      {/* Client Cart Content with Loading */}
-      <ClientCartContent />
+    <Container className="py-10">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-clay">Your basket</p>
+      <h1 className="mb-8 mt-2 font-display text-4xl text-ink">Shopping cart</h1>
+      <CartView />
     </Container>
   );
 }
-
-export default CartPage;

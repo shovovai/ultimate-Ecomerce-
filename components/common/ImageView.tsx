@@ -7,7 +7,7 @@ import {
 import { urlFor } from "@/sanity/lib/image";
 import Image from "next/image";
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   images?: Array<{
@@ -23,51 +23,56 @@ interface Props {
     _key: string;
   }>;
   isStock?: number;
+  alt?: string;
 }
 
-const ImageView = ({ images = [], isStock }: Props) => {
+const ImageView = ({ images = [], isStock, alt = "Product image" }: Props) => {
   const [active, setActive] = useState(images[0]);
+  if (!active) return <div className="aspect-square w-full rounded-[2rem] bg-sand" />;
+
   return (
-    <div className="w-full space-y-2 md:space-y-4">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={active?._key}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-h-[550px] min-h-[450px] border border-dark-color/10 rounded-md group overflow-hidden"
-        >
-          <Image
-            src={urlFor(active).url()}
-            alt="productImage"
-            width={700}
-            height={700}
-            priority
-            className={`w-full h-96 max-h-[550px] min-h-[500px] object-contain group-hover:scale-110 hoverEffect rounded-md ${
-              isStock === 0 ? "opacity-50" : ""
-            }`}
-          />
-        </motion.div>
-      </AnimatePresence>
-      <div className="grid grid-cols-6 gap-2 h-20 md:h-24">
-        {images.map((image) => (
-          <button
-            key={image._key}
-            onClick={() => setActive(image)}
-            className={`border rounded-md overflow-hidden ${
-              active._key === image._key ? "ring-1 ring-dark-color" : ""
-            }`}
-          >
-            <Image
-              src={urlFor(image).url()}
-              alt={`Thumbnail ${image._key}`}
-              width={100}
-              height={100}
-              className="w-full h-auto object-contain"
-            />
-          </button>
-        ))}
+    <div className="flex flex-col-reverse gap-3 md:flex-row">
+      {images.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide md:w-20 md:flex-col md:overflow-visible md:pb-0">
+          {images.map((image) => (
+            <button
+              key={image._key}
+              onClick={() => setActive(image)}
+              aria-label="Show image"
+              className={cn(
+                "aspect-square w-16 shrink-0 overflow-hidden rounded-xl bg-sand ring-2 transition-all md:w-20",
+                active._key === image._key ? "ring-clay" : "ring-transparent opacity-70 hover:opacity-100"
+              )}
+            >
+              <Image
+                src={urlFor(image).width(160).height(160).url()}
+                alt=""
+                width={80}
+                height={80}
+                className="h-full w-full object-contain p-1.5 mix-blend-multiply"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="group relative aspect-square flex-1 overflow-hidden rounded-[2rem] bg-sand">
+        <Image
+          key={active._key}
+          src={urlFor(active).width(1200).url()}
+          alt={alt}
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className={cn(
+            "animate-fade-in object-contain p-8 mix-blend-multiply transition-transform duration-500 group-hover:scale-105",
+            isStock === 0 && "opacity-40 grayscale"
+          )}
+        />
+        {isStock === 0 && (
+          <span className="absolute left-5 top-5 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-cream">
+            Sold out
+          </span>
+        )}
       </div>
     </div>
   );

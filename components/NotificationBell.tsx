@@ -20,7 +20,7 @@ export default function NotificationBell() {
       <Bell className="text-shop_dark_green/80 group-hover:text-shop_dark_green hoverEffect" />
       {unreadNotifications > 0 ? (
         <span
-          className={`absolute -top-1 -right-1 bg-shop_btn_dark_green text-white rounded-full text-xs font-semibold flex items-center justify-center min-w-[14px] h-[14px] ${
+          className={`absolute -top-1 -right-1 bg-clay text-white rounded-full text-[10px] ring-2 ring-cream font-semibold flex items-center justify-center min-w-[16px] h-[16px] ${
             unreadNotifications > 9 ? "px-1" : ""
           }`}
         >
@@ -28,7 +28,7 @@ export default function NotificationBell() {
         </span>
       ) : (
         <span
-          className={`absolute -top-1 -right-1 bg-shop_btn_dark_green text-white rounded-full text-xs font-semibold flex items-center justify-center min-w-[14px] h-[14px]`}
+          className={`absolute -top-1 -right-1 bg-clay text-white rounded-full text-[10px] ring-2 ring-cream font-semibold flex items-center justify-center min-w-[16px] h-[16px]`}
         >
           0
         </span>

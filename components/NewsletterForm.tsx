@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
-const NewsletterForm = () => {
+const NewsletterForm = ({ tone = "light" }: { tone?: "light" | "dark" }) => {
+  const dark = tone === "dark";
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{
@@ -86,19 +87,23 @@ const NewsletterForm = () => {
 
   return (
     <div className="space-y-3">
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
         <input
           type="email"
           placeholder="Enter your email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-shop_dark_green focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
+          className={`w-full flex-1 rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay disabled:cursor-not-allowed disabled:opacity-60 transition-all ${
+            dark
+              ? "bg-white/10 text-cream placeholder:text-cream/50 border border-white/15"
+              : "bg-white text-ink placeholder:text-light-text border border-border"
+          }`}
         />
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="shrink-0 rounded-full bg-clay px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-clay-dark disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {isLoading ? (
             <>

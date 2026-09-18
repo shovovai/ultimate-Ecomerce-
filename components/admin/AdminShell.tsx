@@ -18,6 +18,7 @@ import {
   Shield,
   ShoppingCart,
   Star,
+  TicketPercent,
   UserCheck,
   Users,
   UsersRound,
@@ -48,6 +49,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
       { label: "Products", href: "/admin/products", icon: Package },
       { label: "Reviews", href: "/admin/reviews", icon: Star },
+      { label: "Coupons", href: "/admin/coupons", icon: TicketPercent },
     ],
   },
   {

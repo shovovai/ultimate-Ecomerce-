@@ -65,7 +65,7 @@ const EXPORT_TYPES = [
   { type: "reviews", label: "Reviews", hint: "Product reviews & moderation status", dated: true },
 ];
 
-const ACCENT = "var(--admin-accent, #063c28)";
+const ACCENT = "var(--admin-accent, #c2542d)";
 
 const pretty = (s: string) =>
   s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());

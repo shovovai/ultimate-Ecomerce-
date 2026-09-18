@@ -22,7 +22,7 @@ export interface StoreSettings {
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   adminPanelTitle: `${brand.name} Admin`,
   adminLogoUrl: "",
-  accentColor: "#063c28",
+  accentColor: "#c2542d",
   storeName: brand.name,
   supportEmail: brand.emails.support,
   supportPhone: process.env.NEXT_PUBLIC_COMPANY_PHONE || "",

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { ClerkLoaded, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { Flame, LifeBuoy, Truck, UserRound } from "lucide-react";
 import Container from "./Container";
 import HeaderMenu from "./layout/HeaderMenu";
 import Logo from "./common/Logo";
@@ -13,16 +14,24 @@ import FavoriteButton from "./FavoriteButton";
 import NotificationBell from "./NotificationBell";
 import UserDropdown from "./UserDropdown";
 import { useRouter, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
+
+const iconWrap =
+  "flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand transition-colors";
 
 const ClientHeader = () => {
   const { user, isSignedIn } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Track when component is mounted on client side
   useEffect(() => {
     setIsMounted(true);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // Handle redirect after successful login
@@ -30,136 +39,106 @@ const ClientHeader = () => {
     if (isSignedIn && user && isMounted && typeof window !== "undefined") {
       const redirectTo = searchParams.get("redirectTo");
       if (redirectTo) {
-        // Clean up the URL and redirect
-        const cleanUrl = decodeURIComponent(redirectTo);
-        router.push(cleanUrl);
-        // Remove the redirectTo param from current URL
-        const currentPath = window.location.pathname;
-        router.replace(currentPath);
+        router.push(decodeURIComponent(redirectTo));
+        router.replace(window.location.pathname);
       }
     }
   }, [isSignedIn, user, searchParams, router, isMounted]);
 
-  const getSignInUrl = () => {
-    if (!isMounted || typeof window === "undefined") return "/sign-in";
+  const authUrl = (base: string) => {
+    if (!isMounted || typeof window === "undefined") return base;
     const currentPath = window.location.pathname + window.location.search;
-    return `/sign-in?redirectTo=${encodeURIComponent(currentPath)}`;
-  };
-
-  const getSignUpUrl = () => {
-    if (!isMounted || typeof window === "undefined") return "/sign-up";
-    const currentPath = window.location.pathname + window.location.search;
-    return `/sign-up?redirectTo=${encodeURIComponent(currentPath)}`;
+    return `${base}?redirectTo=${encodeURIComponent(currentPath)}`;
   };
 
   return (
-    <header className="sticky top-0 z-40 py-2 sm:py-3 lg:py-4 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
-      <Container className="h-full">
-        <div className="flex items-center h-full min-h-[3rem] sm:min-h-[3.5rem] lg:min-h-[4rem]">
-          {/* Left Section: Mobile Menu + Logo */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+    <header
+      className={cn(
+        "sticky top-0 z-40 border-b bg-cream/90 backdrop-blur-md transition-shadow",
+        scrolled ? "border-border shadow-[0_6px_24px_-12px_rgba(31,26,23,0.25)]" : "border-transparent"
+      )}
+    >
+      <Container>
+        {/* Main row */}
+        <div className="flex h-16 items-center gap-3 sm:h-[4.5rem] lg:h-20 lg:gap-10">
+          <div className="flex shrink-0 items-center gap-1">
             <MobileMenu />
             <Logo />
           </div>
 
-          {/* Center Section: Navigation Menu (Desktop Only) */}
-          <div className="hidden lg:flex items-center justify-center flex-1 mx-8">
-            <HeaderMenu />
-          </div>
-
-          {/* Right Section: Search + Actions */}
-          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 ml-auto">
-            {/* Search Bar */}
-            <div className="flex-shrink-0">
+          <div className="ml-auto flex min-w-0 flex-1 justify-end sm:ml-0 sm:justify-center">
+            <div className="w-auto sm:w-full sm:max-w-xl">
               <SearchBar />
             </div>
+          </div>
 
-            {/* Desktop Actions */}
-            <div className="hidden lg:flex items-center gap-4">
-              <CartIcon />
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <div className={cn(iconWrap, "hidden md:flex")}>
               <FavoriteButton />
-              <NotificationBell />
-
-              <ClerkLoaded>
-                <SignedIn>
-                  <UserDropdown />
-                </SignedIn>
-
-                <SignedOut>
-                  <div className="flex items-center gap-3">
-                    <Link
-                      href={getSignInUrl()}
-                      className="bg-transparent border border-shop_btn_dark_green hover:bg-shop_btn_dark_green text-shop_btn_dark_green  hover:text-white px-2 py-1.5 rounded text-xs font-semibold hoverEffect"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      href={getSignUpUrl()}
-                      className="bg-shop_btn_dark_green border border-shop_btn_dark_green hover:bg-transparent text-white hover:text-shop_btn_dark_green px-2 py-1.5 rounded text-xs font-semibold hoverEffect"
-                    >
-                      Sign Up
-                    </Link>
-                  </div>
-                </SignedOut>
-              </ClerkLoaded>
             </div>
-
-            {/* Tablet Actions (Medium screens) */}
-            <div className="hidden md:flex lg:hidden items-center gap-2">
+            <div className={iconWrap}>
               <CartIcon />
-              <FavoriteButton />
-              <NotificationBell />
-
-              <ClerkLoaded>
-                <SignedIn>
-                  <UserDropdown />
-                </SignedIn>
-                <SignedOut>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={getSignInUrl()}
-                      className="text-sm font-semibold hover:text-shop_light_green hoverEffect px-2 py-1 transition-colors duration-200"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      href={getSignUpUrl()}
-                      className="bg-shop_dark_green hover:bg-shop_light_green text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-all duration-200"
-                    >
-                      Sign Up
-                    </Link>
-                  </div>
-                </SignedOut>
-              </ClerkLoaded>
             </div>
-
-            {/* Mobile Actions (Small screens) */}
-            <div className="flex md:hidden items-center gap-1">
-              <ClerkLoaded>
-                <SignedIn>
+            <ClerkLoaded>
+              <SignedIn>
+                <div className={cn(iconWrap, "hidden md:flex")}>
+                  <NotificationBell />
+                </div>
+                <div className="ml-1">
                   <UserDropdown />
-                </SignedIn>
-                <SignedOut>
-                  <div className="flex items-center gap-1">
-                    <Link
-                      href={getSignInUrl()}
-                      className="bg-transparent border border-shop_btn_dark_green hover:bg-shop_btn_dark_green text-shop_btn_dark_green  hover:text-white px-2 py-1.5 rounded text-xs font-semibold hoverEffect"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      href={getSignUpUrl()}
-                      className="bg-shop_btn_dark_green border border-shop_btn_dark_green hover:bg-transparent text-white hover:text-shop_btn_dark_green px-2 py-1.5 rounded text-xs font-semibold hoverEffect"
-                    >
-                      Sign Up
-                    </Link>
-                  </div>
-                </SignedOut>
-              </ClerkLoaded>
-            </div>
+                </div>
+              </SignedIn>
+              <SignedOut>
+                <Link
+                  href={authUrl("/sign-in")}
+                  className="ml-1 inline-flex items-center gap-2 rounded-full bg-ink px-3 py-2 text-sm font-semibold text-cream transition-colors hover:bg-clay sm:px-4"
+                >
+                  <UserRound className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sign in</span>
+                </Link>
+                <Link
+                  href={authUrl("/sign-up")}
+                  className="ml-1 hidden rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-ink lg:inline-flex"
+                >
+                  Join
+                </Link>
+              </SignedOut>
+            </ClerkLoaded>
           </div>
         </div>
+
       </Container>
+
+      {/* Navigation band (desktop) */}
+      <div className="hidden border-t border-border/70 bg-white/55 lg:block">
+        <Container>
+          <div className="flex h-14 items-center justify-between gap-6">
+            <div className="rounded-full bg-sand/80 p-1 ring-1 ring-ink/5">
+              <HeaderMenu />
+            </div>
+
+            <div className="flex items-center gap-2 text-sm">
+              <span className="hidden items-center gap-2 pr-3 text-light-color xl:inline-flex">
+                <Truck className="h-4 w-4 text-sage" />
+                Fast delivery · Cash on delivery available
+              </span>
+              <span aria-hidden className="hidden h-5 w-px bg-border xl:block" />
+              <Link
+                href="/deal"
+                className="inline-flex items-center gap-1.5 rounded-full bg-clay/10 px-4 py-2 font-semibold text-clay transition-colors hover:bg-clay hover:text-white"
+              >
+                <Flame className="h-4 w-4" /> Today&apos;s deals
+              </Link>
+              <Link
+                href="/help"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-light-color transition-colors hover:bg-sand hover:text-ink"
+              >
+                <LifeBuoy className="h-4 w-4" /> Help
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </div>
     </header>
   );
 };

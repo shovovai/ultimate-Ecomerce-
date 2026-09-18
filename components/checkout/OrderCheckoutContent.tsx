@@ -1,26 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import {
-  CreditCard,
-  Truck,
-  MapPin,
-  Package,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react";
-import PriceFormatter from "@/components/PriceFormatter";
-import Image from "next/image";
-import { urlFor } from "@/sanity/lib/image";
-import { toast } from "sonner";
-import { PAYMENT_METHODS, PaymentMethod } from "@/lib/orderStatus";
+import { useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { CreditCard, Loader2, MapPin, Package, Smartphone, type LucideIcon } from "lucide-react";
+import { toast } from "sonner";
+import { image } from "@/sanity/image";
+import { formatPrice } from "@/lib/storeConfig";
+import { cn } from "@/lib/utils";
 
 interface OrderProduct {
   product: {
@@ -29,7 +15,6 @@ interface OrderProduct {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     images?: any[];
     price: number;
-    currency: string;
   };
   quantity: number;
 }
@@ -37,318 +22,159 @@ interface OrderProduct {
 interface Order {
   _id: string;
   orderNumber: string;
-  customerName: string;
-  email: string;
   products: OrderProduct[];
   subtotal: number;
+  amountDiscount?: number;
+  couponCode?: string;
   tax: number;
   shipping: number;
   totalPrice: number;
-  currency: string;
-  address: {
-    name: string;
-    address: string;
-    city: string;
-    state: string;
-    zip: string;
-  };
+  address: { name: string; address: string; city: string; state: string; zip: string };
   status: string;
   paymentStatus: string;
-  orderDate: string;
 }
 
-interface OrderCheckoutContentProps {
+const METHODS: Record<string, { label: string; hint: string; icon: LucideIcon }> = {
+  sslcommerz: { label: "bKash, Nagad, Rocket & cards", hint: "via SSLCommerz", icon: Smartphone },
+  stripe: { label: "Credit / debit card", hint: "via Stripe", icon: CreditCard },
+};
+
+// Pay later for an order that was saved but not paid yet
+export function OrderCheckoutContent({
+  order,
+  onlineMethods,
+}: {
   order: Order;
-}
+  onlineMethods: string[];
+}) {
+  const methods = onlineMethods.filter((m) => METHODS[m]);
+  const [method, setMethod] = useState(methods[0] || "");
+  const [busy, setBusy] = useState(false);
+  const paid = order.paymentStatus === "paid";
 
-export function OrderCheckoutContent({ order }: OrderCheckoutContentProps) {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<PaymentMethod>(PAYMENT_METHODS.STRIPE);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handlePayNow = async () => {
-    setIsProcessing(true);
-
+  const pay = async () => {
+    if (!method) return;
+    setBusy(true);
     try {
-      const response = await fetch(`/api/orders/${order._id}/pay`, {
+      const res = await fetch(`/api/checkout/${method}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order._id }),
       });
-
-      const data = await response.json();
-
-      if (response.ok && data.success && data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.url;
-      } else {
-        toast.error(data.error || "Failed to create payment session");
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-      toast.error("Failed to initiate payment");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleCODPayment = async () => {
-    setIsProcessing(true);
-
-    try {
-      // Here you could implement COD logic if needed
-      // For now, just show a message
-      toast.success("Order confirmed with Cash on Delivery payment method");
-
-      setTimeout(() => {
-        window.location.href = `/user/orders/${order._id}`;
-      }, 1500);
-    } catch (error) {
-      console.error("COD payment error:", error);
-      toast.error("Failed to process COD payment");
-    } finally {
-      setIsProcessing(false);
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "Could not start payment");
+      window.location.href = data.url;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not start payment");
+      setBusy(false);
     }
   };
 
   return (
-    <div className="grid lg:grid-cols-3 gap-8">
-      {/* Order Details */}
-      <div className="lg:col-span-2 space-y-6">
-        {/* Order Info */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Order #{order.orderNumber?.slice(-8)}
-              </CardTitle>
-              <Badge variant="outline" className="capitalize">
-                {order.status}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Customer</p>
-                <p className="font-medium">{order.customerName}</p>
-                <p className="text-muted-foreground">{order.email}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Order Date</p>
-                <p className="font-medium">
-                  {new Date(order.orderDate).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Shipping Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              Shipping Address
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              <p className="font-medium">{order.address.name}</p>
-              <p className="text-muted-foreground">{order.address.address}</p>
-              <p className="text-muted-foreground">
-                {order.address.city}, {order.address.state} {order.address.zip}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Payment Method */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              Payment Method
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RadioGroup
-              value={selectedPaymentMethod}
-              onValueChange={(value) =>
-                setSelectedPaymentMethod(value as PaymentMethod)
-              }
-              className="space-y-3"
-            >
-              <div className="flex items-start space-x-3 p-3 border rounded-lg">
-                <RadioGroupItem
-                  value={PAYMENT_METHODS.STRIPE}
-                  id="stripe"
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <Label htmlFor="stripe" className="cursor-pointer">
-                    <div className="flex items-center gap-2 font-medium">
-                      <CreditCard className="w-4 h-4" />
-                      Credit/Debit Card
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Pay securely with your credit or debit card via Stripe
-                    </p>
-                  </Label>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3 p-3 border rounded-lg">
-                <RadioGroupItem
-                  value={PAYMENT_METHODS.CASH_ON_DELIVERY}
-                  id="cod"
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <Label htmlFor="cod" className="cursor-pointer">
-                    <div className="flex items-center gap-2 font-medium">
-                      <Truck className="w-4 h-4" />
-                      Cash on Delivery
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Pay when your order is delivered to your doorstep
-                    </p>
-                  </Label>
-                </div>
-              </div>
-            </RadioGroup>
-          </CardContent>
-        </Card>
-
-        {/* Order Items */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Items ({order.products.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {order.products.map((item, index) => (
-              <div key={index} className="flex gap-3 p-3 border rounded-lg">
-                <div className="w-16 h-16 flex-shrink-0">
-                  <Image
-                    src={
-                      item.product.images?.[0]
-                        ? urlFor(item.product.images[0]).url()
-                        : "/placeholder.jpg"
-                    }
-                    alt={item.product.name || "Product"}
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover rounded"
-                  />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium">{item.product.name}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Qty: {item.quantity}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">
-                    <PriceFormatter
-                      amount={item.product.price * item.quantity}
-                    />
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <PriceFormatter amount={item.product.price} /> each
-                  </p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Order Summary & Actions */}
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span>Subtotal ({order.products.length} items)</span>
-              <PriceFormatter amount={order.subtotal} />
-            </div>
-            <div className="flex justify-between">
-              <span>Shipping</span>
-              {order.shipping === 0 ? (
-                <span className="text-green-600 font-medium">Free</span>
-              ) : (
-                <PriceFormatter amount={order.shipping} />
-              )}
-            </div>
-            <div className="flex justify-between">
-              <span>Tax</span>
-              <PriceFormatter amount={order.tax} />
-            </div>
-            <Separator />
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total</span>
-              <PriceFormatter amount={order.totalPrice} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Button
-          onClick={
-            selectedPaymentMethod === PAYMENT_METHODS.STRIPE
-              ? handlePayNow
-              : handleCODPayment
-          }
-          disabled={isProcessing}
-          className="w-full h-12 text-lg font-semibold"
-          size="lg"
-        >
-          {isProcessing ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Processing...
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {selectedPaymentMethod === PAYMENT_METHODS.STRIPE ? (
-                <>
-                  <CreditCard className="w-5 h-5" />
-                  Pay <PriceFormatter amount={order.totalPrice} />
-                </>
-              ) : (
-                <>
-                  <Truck className="w-5 h-5" />
-                  Confirm COD Order
-                </>
-              )}
-            </div>
-          )}
-        </Button>
-
-        <Button asChild variant="outline" className="w-full">
-          <Link href="/user/orders" className="flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Orders
-          </Link>
-        </Button>
-
-        <div className="text-center text-xs text-muted-foreground">
-          {selectedPaymentMethod === PAYMENT_METHODS.STRIPE ? (
-            <>
-              <p>🔒 Secure payment powered by Stripe</p>
-              <p>Your payment information is encrypted and secure</p>
-            </>
-          ) : (
-            <>
-              <p>💵 Pay when your order arrives</p>
-              <p>Cash payment to delivery agent</p>
-            </>
-          )}
+    <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
+      <section className="rounded-3xl border border-border bg-white p-6">
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-display text-2xl text-ink">
+            <Package className="h-5 w-5 text-clay" /> Order {order.orderNumber}
+          </h2>
+          <span className="rounded-full bg-sand px-3 py-1 text-xs font-semibold capitalize text-ink">
+            {order.status.replace(/_/g, " ")}
+          </span>
         </div>
-      </div>
+        <ul className="divide-y divide-border">
+          {order.products?.map((item, i) => (
+            <li key={i} className="flex items-center gap-4 py-3">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-sand">
+                {item.product?.images?.[0] && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={image(item.product.images[0]).size(160, 160).url()}
+                    alt=""
+                    className="h-full w-full object-contain p-1.5 mix-blend-multiply"
+                  />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-1 font-medium text-ink">{item.product?.name}</p>
+                <p className="text-sm text-light-color">Qty {item.quantity}</p>
+              </div>
+              <p className="font-semibold tabular-nums">
+                {formatPrice((item.product?.price || 0) * item.quantity)}
+              </p>
+            </li>
+          ))}
+        </ul>
+        {order.address && (
+          <p className="mt-5 flex gap-2 rounded-2xl bg-cream p-4 text-sm text-light-color">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-clay" />
+            {[order.address.name, order.address.address, order.address.city, order.address.state, order.address.zip]
+              .filter(Boolean)
+              .join(", ")}
+          </p>
+        )}
+      </section>
+
+      <aside className="rounded-3xl border border-border bg-white p-6">
+        <h2 className="mb-4 font-display text-2xl text-ink">Payment</h2>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
+          {!!order.amountDiscount && (
+            <div className="flex justify-between text-sage">
+              <span>Discount{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+              <span>-{formatPrice(order.amountDiscount)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-light-color"><span>Shipping</span><span>{order.shipping ? formatPrice(order.shipping) : "Free"}</span></div>
+          {!!order.tax && <div className="flex justify-between text-light-color"><span>Tax</span><span>{formatPrice(order.tax)}</span></div>}
+          <div className="flex items-end justify-between border-t border-dashed border-border pt-3">
+            <span className="font-semibold">Total</span>
+            <span className="font-display text-3xl">{formatPrice(order.totalPrice)}</span>
+          </div>
+        </div>
+
+        {paid ? (
+          <p className="mt-6 rounded-2xl bg-sage/10 p-4 text-sm font-semibold text-sage">This order is already paid.</p>
+        ) : methods.length === 0 ? (
+          <p className="mt-6 rounded-2xl bg-sand p-4 text-sm text-light-color">
+            Online payment isn&apos;t available right now. You can pay cash on delivery.
+          </p>
+        ) : (
+          <>
+            <div className="mt-6 space-y-2">
+              {methods.map((m) => {
+                const info = METHODS[m];
+                return (
+                  <button
+                    key={m}
+                    onClick={() => setMethod(m)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left",
+                      method === m ? "border-clay bg-clay/5" : "border-border"
+                    )}
+                  >
+                    <info.icon className="h-5 w-5 text-clay" />
+                    <span className="flex-1">
+                      <span className="block text-sm font-semibold">{info.label}</span>
+                      <span className="block text-xs text-light-color">{info.hint}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={pay}
+              disabled={busy || !method}
+              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-clay text-sm font-semibold text-white hover:bg-clay-dark disabled:opacity-50"
+            >
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              Pay {formatPrice(order.totalPrice)}
+            </button>
+          </>
+        )}
+        <Link href={`/user/orders/${order._id}`} className="mt-4 block text-center text-sm text-light-color hover:text-ink">
+          View order details
+        </Link>
+      </aside>
     </div>
   );
 }

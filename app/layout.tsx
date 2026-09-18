@@ -1,29 +1,24 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import localFont from "next/font/local";
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import Script from "next/script";
 import { UserDataProvider } from "@/contexts/UserDataContext";
 import { brand } from "@/config/brand";
 import "./globals.css";
 
-const poppins = localFont({
-  src: "./fonts/Poppins.woff2",
-  variable: "--font-poppins",
-  weight: "400",
-  preload: false,
-});
-const raleway = localFont({
-  src: "./fonts/Raleway.woff2",
-  variable: "--font-raleway",
-  weight: "100 900",
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
 });
 
-const opensans = localFont({
-  src: "./fonts/Open Sans.woff2",
-  variable: "--font-open-sans",
-  weight: "100 800",
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  axes: ["SOFT", "opsz"],
 });
 
 export const metadata: Metadata = {
@@ -100,9 +95,9 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
   const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" className={`${jakarta.variable} ${fraunces.variable}`}>
         <body
-          className={`${poppins.variable} ${raleway.variable} ${opensans.variable} antialiased`}
+          className="font-sans antialiased"
         >
           <UserDataProvider>{children}</UserDataProvider>
           <Toaster

@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/lib/storeConfig";
 
 import React, { useState } from "react";
 import {
@@ -308,7 +309,7 @@ export const UserDetailsSidebar: React.FC<UserDetailsSidebarProps> = ({
                           Total Spent
                         </div>
                         <div className="text-lg font-semibold">
-                          ${user.totalSpent.toFixed(2)}
+                          {formatPrice(user.totalSpent)}
                         </div>
                       </div>
                     </div>

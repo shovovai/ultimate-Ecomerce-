@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/lib/storeConfig";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -106,7 +107,7 @@ const UserDropdown = () => {
                   </span>
                 </div>
                 <span className="text-lg font-bold text-shop_dark_green">
-                  ${walletBalance.toFixed(2)}
+                  {formatPrice(walletBalance)}
                 </span>
               </div>
             </div>

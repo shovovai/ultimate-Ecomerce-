@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { isUserAdmin } from "@/lib/adminUtils";
-import { client } from "@/sanity/lib/client";
+import { backendClient as client } from "@/sanity/lib/backendClient";
+import { requireAdmin } from "@/lib/adminAuth";
+import { parseProductInput } from "@/lib/productInput";
+import { invalidateProducts } from "@/lib/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,19 +34,21 @@ export async function GET(req: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get("id");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10") || 10, 1), 100);
+    const offset = Math.max(parseInt(searchParams.get("offset") || "0") || 0, 0);
     const category = searchParams.get("category") || "";
     const search = searchParams.get("search") || "";
-    const sortBy = searchParams.get("sortBy") || "_createdAt";
-    const sortOrder = searchParams.get("sortOrder") || "desc";
+    const sortBy = ["_createdAt", "name", "price", "stock"].includes(searchParams.get("sortBy") || "")
+      ? searchParams.get("sortBy")!
+      : "_createdAt";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
 
     console.log("API Params - category:", category, "search:", search);
 
     // If requesting a specific product by ID, return full details
     if (productId) {
       const productQuery = `
-        *[_type == "product" && _id == "${productId}"][0] {
+        *[_type == "product" && _id == $productId][0] {
           _id,
           _type,
           _createdAt,
@@ -78,7 +83,7 @@ export async function GET(req: NextRequest) {
         }
       `;
 
-      const product = await client.fetch(productQuery);
+      const product = await client.fetch(productQuery, { productId });
 
       if (!product) {
         return NextResponse.json(
@@ -114,15 +119,19 @@ export async function GET(req: NextRequest) {
 
     // Build filter conditions
     const filterConditions = [];
+    const queryParams: Record<string, string> = {};
+    if (category) queryParams.category = category;
+    if (search) queryParams.searchTerm = `${search.replace(/[*"\\]/g, "")}*`;
+
     if (category) {
       // Use references to filter by category
       filterConditions.push(
-        `references(*[_type == "category" && title == "${category}"]._id)`
+        `references(*[_type == "category" && title == $category]._id)`
       );
     }
     if (search) {
       filterConditions.push(
-        `(name match "${search}*" || description match "${search}*")`
+        `(name match $searchTerm || description match $searchTerm)`
       );
     } // Build GROQ query
     const query = `
@@ -174,8 +183,8 @@ export async function GET(req: NextRequest) {
 
     // Execute queries
     const [products, totalCount] = await Promise.all([
-      client.fetch(query),
-      client.fetch(countQuery),
+      client.fetch(query, queryParams),
+      client.fetch(countQuery, queryParams),
     ]);
 
     return NextResponse.json({
@@ -196,5 +205,30 @@ export async function GET(req: NextRequest) {
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+// POST — create a product from the admin panel
+export async function POST(req: NextRequest) {
+  try {
+    const admin = await requireAdmin();
+    if (!admin.ok) return admin.response;
+
+    const parsed = parseProductInput(await req.json());
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+
+    const slug = (parsed.doc.slug as { current: string }).current;
+    const clash = await client.fetch<number>(`count(*[_type == "product" && slug.current == $slug])`, { slug });
+    if (clash) {
+      return NextResponse.json({ error: "A product with this slug already exists" }, { status: 409 });
+    }
+
+    const doc = Object.fromEntries(Object.entries(parsed.doc).filter(([, v]) => v !== undefined));
+    const product = await client.create({ _type: "product", ...doc, averageRating: 0, totalReviews: 0 });
+    await invalidateProducts();
+    return NextResponse.json({ success: true, product });
+  } catch (error) {
+    console.error("Create product failed:", error);
+    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
   }
 }

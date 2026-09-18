@@ -19,7 +19,6 @@ import {
   ChevronLeft,
   User,
   Clock,
-  Eye,
   Share2,
   BookOpen,
   ArrowRight,
@@ -146,11 +145,6 @@ const SingleBlogPage = async ({
                   <div className="flex items-center gap-1">
                     <Clock size={16} />
                     <span>{readingTime} min read</span>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <Eye size={16} />
-                    <span>2.5K views</span>
                   </div>
                 </div>
 

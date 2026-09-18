@@ -185,6 +185,7 @@ export const ORDER_BY_ID_QUERY = `
         _id,
         name,
         slug,
+        images,
         image {
           asset -> {
             _id,
@@ -200,6 +201,10 @@ export const ORDER_BY_ID_QUERY = `
       quantity
     },
     subtotal,
+    couponCode,
+    couponDiscount,
+    businessDiscount,
+    paymentTransactionId,
     tax,
     shipping,
     totalPrice,

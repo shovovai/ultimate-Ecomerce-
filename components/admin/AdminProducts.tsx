@@ -40,7 +40,13 @@ import {
   Package2,
   ChevronLeft,
   ChevronRight,
+  Pencil,
+  Plus,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
+import ProductFormDialog from "./ProductFormDialog";
+import { formatPrice } from "@/lib/storeConfig";
 import { ProductsSkeleton } from "./SkeletonLoaders";
 import { Product } from "./types";
 import { safeApiCall, handleApiError } from "./apiHelpers";
@@ -67,6 +73,26 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     useState<ADMIN_CATEGORIES_QUERYResult>(initialCategories);
 
   const limit = 10;
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const openEditor = (id: string | null) => {
+    setEditingId(id);
+    setEditorOpen(true);
+  };
+
+  const deleteProduct = async (product: Product) => {
+    if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/admin/products/${product._id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success(data.archived ? data.message : "Product deleted");
+      fetchProducts(currentPage);
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Delete failed");
+    }
+  };
 
   // Debounce search term
   useEffect(() => {
@@ -86,10 +112,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
 
   // Utility functions
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+    return formatPrice(amount);
   };
 
   // Fetch products
@@ -222,9 +245,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
     <div className="space-y-4 p-4">
       {/* Header */}
       <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-        <h3 className="text-lg font-semibold">
-          Products Management (Read-Only)
-        </h3>
+        <div>
+          <h3 className="text-lg font-semibold">Products</h3>
+          <p className="text-sm text-gray-500">Add, edit and manage your catalog.</p>
+        </div>
         <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:gap-2 sm:space-y-0">
           <Input
             placeholder="Search products..."
@@ -248,10 +272,14 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
           <Button
             onClick={() => fetchProducts(currentPage)}
             size="sm"
+            variant="outline"
             className="w-full sm:w-auto"
           >
             <RefreshCw className="h-4 w-4" />
             <span className="ml-2 sm:hidden">Refresh</span>
+          </Button>
+          <Button onClick={() => openEditor(null)} size="sm" className="w-full sm:w-auto">
+            <Plus className="mr-1 h-4 w-4" /> New product
           </Button>
         </div>
       </div>
@@ -355,8 +383,15 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleViewProduct(product)}
+                                aria-label="View"
                               >
                                 <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => openEditor(product._id)} aria-label="Edit">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => deleteProduct(product)} aria-label="Delete">
+                                <Trash2 className="h-4 w-4 text-red-600" />
                               </Button>
                             </div>
                           </TableCell>
@@ -416,13 +451,17 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
                               )}
                             </div>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleViewProduct(product)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex">
+                            <Button size="sm" variant="ghost" onClick={() => handleViewProduct(product)} aria-label="View">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => openEditor(product._id)} aria-label="Edit">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => deleteProduct(product)} aria-label="Delete">
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -509,7 +548,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
           <SheetHeader className="pb-6">
             <SheetTitle>Product Details</SheetTitle>
             <SheetDescription>
-              Complete product information in read-only mode
+              Product details
             </SheetDescription>
           </SheetHeader>
 
@@ -825,6 +864,12 @@ const AdminProducts: React.FC<AdminProductsProps> = ({
           )}
         </SheetContent>
       </Sheet>
+      <ProductFormDialog
+        open={editorOpen}
+        productId={editingId}
+        onOpenChange={setEditorOpen}
+        onSaved={() => fetchProducts(currentPage)}
+      />
     </div>
   );
 };

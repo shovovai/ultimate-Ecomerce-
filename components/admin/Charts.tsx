@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/storeConfig";
 import { FC } from "react";
 import {
   Card,
@@ -78,7 +79,7 @@ export const RevenueTrendChart: FC<RevenueTrendChartProps> = ({ data }) => {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => `${formatPrice(value)}`}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <defs>

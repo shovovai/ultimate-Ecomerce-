@@ -1,151 +1,107 @@
 import Image from "next/image";
-import { banner_1 } from "@/images";
 import Link from "next/link";
-import { ShoppingBag, Star, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, BadgePercent, RotateCcw, Truck, Wallet } from "lucide-react";
+import { banner_1 } from "@/images";
 import Container from "./Container";
-import Title from "./Title";
 
-const HomeBanner = async () => {
+const perks = [
+  { icon: Truck, label: "Fast home delivery" },
+  { icon: Wallet, label: "Cash on delivery" },
+  { icon: RotateCcw, label: "Easy 7-day returns" },
+];
+
+const HomeBanner = () => {
   return (
-    <div className="overflow-hidden">
-      <div className="relative py-8 md:py-12 bg-gradient-to-br from-shop_light_pink via-pink-50 to-orange-50 rounded-2xl shadow-2xl">
-        <Container>
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 overflow-hidden rounded-2xl">
-            <div className="absolute -top-16 -right-16 w-32 h-32 bg-gradient-to-br from-shop_light_green/20 to-transparent rounded-full animate-pulse"></div>
-            <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-gradient-to-tr from-shop_dark_green/10 to-transparent rounded-full animate-bounce delay-1000"></div>
-            <div className="absolute top-1/2 left-1/4 w-4 h-4 bg-shop_light_green/30 rounded-full animate-ping delay-500"></div>
-            <div className="absolute top-1/4 right-1/3 w-3 h-3 bg-orange-300/40 rounded-full animate-pulse delay-700"></div>
-          </div>
+    <Container className="pt-4 sm:pt-6">
+      <section className="relative overflow-hidden rounded-[2rem] bg-sand">
+        {/* decorative awning stripes */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-2 bg-[repeating-linear-gradient(90deg,var(--color-clay)_0_32px,var(--color-marigold)_32px_64px)]"
+        />
 
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
-            {/* Left Content */}
-            <div className="flex-1 text-center lg:text-left space-y-8">
-              {/* Badge */}
-              <div className="flex justify-center lg:justify-start">
-                <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-white/20 animate-fadeInUp">
-                  <Zap className="w-4 h-4 text-orange-500 animate-pulse" />
-                  <span className="text-sm font-semibold text-shop_dark_green">
-                    Limited Time Offer
-                  </span>
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-                </div>
-              </div>
+        <div className="grid items-center gap-10 px-6 pb-10 pt-12 sm:px-10 lg:grid-cols-[1.1fr_1fr] lg:gap-6 lg:px-14 lg:py-16">
+          {/* Copy */}
+          <div className="relative z-10">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-ink ring-1 ring-ink/10">
+              <span className="h-1.5 w-1.5 rounded-full bg-clay" />
+              New season at the haat
+            </span>
 
-              {/* Main Title */}
-              <div className="space-y-4">
-                <Title className="text-shop_dark_green font-bold text-4xl sm:text-5xl leading-tight animate-fadeInUp delay-200">
-                  <span className="block">Grab Up to</span>
-                  <span className="block bg-gradient-to-r from-shop_light_green to-shop_dark_green bg-clip-text text-transparent animate-shimmer">
-                    50% Off
-                  </span>
-                  <span className="block text-2xl font-medium text-gray-700">
-                    on Selected Headphones
-                  </span>
-                </Title>
-              </div>
+            <h1 className="mt-5 font-display text-[2.6rem] leading-[1.05] text-ink sm:text-6xl lg:text-[4.2rem]">
+              Everything you love,{" "}
+              <span className="italic text-clay">one market</span> away.
+            </h1>
 
-              {/* Features */}
-              <div className="flex flex-wrap justify-center lg:justify-start gap-6 animate-fadeInUp delay-400">
-                {[
-                  {
-                    icon: Star,
-                    text: "Premium Quality",
-                    color: "text-yellow-500",
-                  },
-                  {
-                    icon: TrendingUp,
-                    text: "Best Deals",
-                    color: "text-green-500",
-                  },
-                  {
-                    icon: ShoppingBag,
-                    text: "Free Shipping",
-                    color: "text-blue-500",
-                  },
-                ].map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 bg-white/70 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border border-white/20 hover:bg-white/90 transition-all duration-300 hover:scale-105"
-                  >
-                    <feature.icon className={`w-4 h-4 ${feature.color}`} />
-                    <span className="text-sm font-medium text-gray-700">
-                      {feature.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-light-color sm:text-lg">
+              Electronics, home essentials and everyday finds from brands you
+              trust — at honest prices, delivered to your door.
+            </p>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fadeInUp delay-600">
-                <Link
-                  href="/shop"
-                  className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-shop_dark_green to-shop_light_green text-white px-8 py-4 rounded-xl text-base font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 overflow-hidden"
-                >
-                  <span className="absolute inset-0 bg-gradient-to-r from-shop_light_green to-shop_dark_green opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                  <span className="relative z-10 flex items-center gap-3">
-                    <ShoppingBag className="w-5 h-5 group-hover:animate-bounce" />
-                    Shop Now
-                  </span>
-                  <div className="absolute inset-0 -top-40 -left-10 bg-white/20 w-6 h-40 rotate-12 group-hover:left-full transition-all duration-700"></div>
-                </Link>
-
-                <Link
-                  href="/deal"
-                  className="group inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm text-shop_dark_green px-8 py-4 rounded-xl text-base font-semibold shadow-md hover:shadow-lg border-2 border-shop_dark_green/20 hover:border-shop_dark_green/40 transform hover:-translate-y-1 transition-all duration-300"
-                >
-                  <Zap className="w-5 h-5 group-hover:animate-pulse text-orange-500" />
-                  View Deals
-                </Link>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-6 pt-8 animate-fadeInUp delay-800">
-                {[
-                  { value: "50K+", label: "Happy Customers" },
-                  { value: "4.9★", label: "Customer Rating" },
-                  { value: "24/7", label: "Support" },
-                ].map((stat, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-2xl sm:text-3xl font-bold text-shop_dark_green">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium">
-                      {stat.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/shop"
+                className="group inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-cream transition-colors hover:bg-clay"
+              >
+                Start shopping
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <Link
+                href="/deal"
+                className="inline-flex items-center gap-2 rounded-full border border-ink/20 bg-white/60 px-7 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-ink"
+              >
+                <BadgePercent className="h-4 w-4 text-clay" />
+                Today&apos;s deals
+              </Link>
             </div>
 
-            {/* Right Image */}
-            <div className="flex-shrink-0 relative">
-              <div className="relative animate-float">
-                {/* Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-shop_light_green/20 to-orange-300/20 rounded-full blur-3xl scale-110 animate-pulse"></div>
+            <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-ink/80">
+              {perks.map(({ icon: Icon, label }) => (
+                <li key={label} className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
+                    <Icon className="h-4 w-4 text-clay" />
+                  </span>
+                  {label}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-                {/* Main Image */}
-                <Image
-                  src={banner_1}
-                  alt="Premium Headphones"
-                  className="relative z-10 w-80 sm:w-96 lg:w-[400px] xl:w-[480px] drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
-                  priority
-                />
+          {/* Visual */}
+          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+            <div className="relative aspect-square">
+              <div className="absolute inset-[6%] rounded-full bg-clay" />
+              <div className="absolute inset-[18%] rounded-full border-2 border-dashed border-cream/50" />
+              <Image
+                src={banner_1}
+                alt="Featured product"
+                priority
+                className="relative z-10 h-full w-full object-contain p-[10%] drop-shadow-[0_30px_40px_rgba(31,26,23,0.35)]"
+              />
 
-                {/* Floating Elements */}
-                <div className="absolute -top-6 -right-6 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-bounce delay-300">
-                  <Star className="w-6 h-6 text-white" />
-                </div>
+              <div className="absolute left-0 top-[12%] z-20 rounded-2xl bg-white px-4 py-3 shadow-lg shadow-ink/10">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-light-color">
+                  This week
+                </p>
+                <p className="font-display text-2xl leading-none text-ink">
+                  Up to <span className="text-clay">50%</span> off
+                </p>
+              </div>
 
-                <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-shop_light_green to-shop_dark_green rounded-full flex items-center justify-center shadow-lg animate-bounce delay-1000">
-                  <span className="text-white font-bold text-sm">50%</span>
+              <div className="absolute bottom-[10%] right-0 z-20 flex items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-cream shadow-lg">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-marigold text-ink">
+                  <Truck className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold leading-tight">Free delivery</p>
+                  <p className="text-xs text-cream/60">on qualifying orders</p>
                 </div>
               </div>
             </div>
           </div>
-        </Container>
-      </div>
-    </div>
+        </div>
+      </section>
+    </Container>
   );
 };
 

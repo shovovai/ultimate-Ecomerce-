@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const DealPageSkeleton = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-50 to-orange-50">
+    <div className="min-h-screen bg-cream">
       {/* Breadcrumb Skeleton */}
       <Container className="pt-6">
         <div className="flex items-center space-x-2">

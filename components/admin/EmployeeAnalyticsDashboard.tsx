@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/lib/storeConfig";
 
 import { useState, useEffect } from "react";
 import { getCurrentEmployee, getAllEmployees } from "@/actions/employeeActions";
@@ -139,7 +140,7 @@ export default function EmployeeAnalyticsDashboard() {
             <div>
               <p className="text-sm text-gray-600 mb-1">Pending Collection</p>
               <p className="text-2xl font-bold text-orange-600">
-                ${cashPending.toFixed(2)}
+                {formatPrice(cashPending)}
               </p>
             </div>
             <Clock className="h-12 w-12 text-orange-500" />

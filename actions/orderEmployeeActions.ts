@@ -1,4 +1,5 @@
 "use server";
+import { formatPrice } from "@/lib/storeConfig";
 
 import { auth } from "@clerk/nextjs/server";
 import { backendClient } from "@/sanity/lib/backendClient";
@@ -563,7 +564,7 @@ export async function collectCash(
       "Cash Collected",
       employee.email,
       employee.employeeRole,
-      `Cash collected: $${cashAmount}`
+      `Cash collected: ${formatPrice(cashAmount)}`
     );
 
     // Update employee performance
@@ -574,7 +575,7 @@ export async function collectCash(
 
     return {
       success: true,
-      message: `Cash collected: $${cashAmount}`,
+      message: `Cash collected: ${formatPrice(cashAmount)}`,
     };
   } catch (error) {
     console.error("Error collecting cash:", error);
@@ -852,9 +853,7 @@ export async function receivePaymentFromDeliveryman(
       employee.email,
       employee.employeeRole,
       notes ||
-        `Cash payment received: $${
-          order.cashCollectedAmount || order.totalPrice
-        }`
+        `Cash payment received: ${formatPrice(order.cashCollectedAmount || order.totalPrice)}`
     );
 
     // Update employee performance
@@ -968,14 +967,14 @@ export async function submitCashToAccounts(
       notes ||
         `Cash submitted to ${accountsEmployee.firstName} ${
           accountsEmployee.lastName
-        }: $${order.cashCollectedAmount || order.totalPrice}`
+        }: ${formatPrice(order.cashCollectedAmount || order.totalPrice)}`
     );
 
     return {
       success: true,
       message: `Cash submitted to ${accountsEmployee.firstName} ${
         accountsEmployee.lastName
-      }: $${order.cashCollectedAmount || order.totalPrice}`,
+      }: ${formatPrice(order.cashCollectedAmount || order.totalPrice)}`,
     };
   } catch (error) {
     console.error("Error submitting cash to accounts:", error);

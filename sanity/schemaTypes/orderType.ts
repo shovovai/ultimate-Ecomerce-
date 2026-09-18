@@ -148,6 +148,31 @@ export const orderType = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: "couponCode",
+      title: "Coupon Code",
+      type: "string",
+      readOnly: true,
+    }),
+    defineField({
+      name: "couponDiscount",
+      title: "Coupon Discount",
+      type: "number",
+      readOnly: true,
+    }),
+    defineField({
+      name: "businessDiscount",
+      title: "Business Account Discount",
+      type: "number",
+      readOnly: true,
+    }),
+    defineField({
+      name: "paymentTransactionId",
+      title: "Payment Transaction ID",
+      description: "Gateway transaction reference (SSLCommerz tran_id / val_id)",
+      type: "string",
+      readOnly: true,
+    }),
+    defineField({
       name: "address",
       title: "Shipping Address",
       type: "object",
@@ -208,7 +233,8 @@ export const orderType = defineType({
         list: [
           { title: "Cash on Delivery", value: "cash_on_delivery" },
           { title: "Stripe", value: "stripe" },
-          { title: "Clerk", value: "clerk" },
+          { title: "SSLCommerz (bKash, Nagad, cards)", value: "sslcommerz" },
+          { title: "Clerk (legacy)", value: "clerk" },
           { title: "Card", value: "card" },
         ],
       },

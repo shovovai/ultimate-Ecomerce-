@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/storeConfig";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { isUserAdmin } from "@/lib/adminUtils";
@@ -248,7 +249,7 @@ export async function GET(req: NextRequest) {
         .map((order: RecentOrder) => ({
           action: `Order ${order.orderNumber} ${order.status}`,
           time: new Date(order.orderDate).toLocaleDateString(),
-          value: `$${order.totalPrice?.toLocaleString() || 0}`,
+          value: `${formatPrice(order.totalPrice)}`,
         }));
 
       // Return analytics data in the format expected by the component

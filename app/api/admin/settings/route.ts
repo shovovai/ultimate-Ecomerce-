@@ -47,7 +47,7 @@ export async function PUT(request: NextRequest) {
       !/^#([0-9a-fA-F]{3}){1,2}$/.test(update.accentColor)
     ) {
       return NextResponse.json(
-        { success: false, error: "Accent color must be a hex value like #063c28" },
+        { success: false, error: "Accent color must be a hex value like #1f1a17" },
         { status: 400 }
       );
     }

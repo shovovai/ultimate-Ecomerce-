@@ -1,3 +1,5 @@
+import { restoreOrderStock } from "@/lib/stock";
+import { formatPrice } from "@/lib/storeConfig";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { isUserAdmin } from "@/lib/adminUtils";
@@ -153,7 +155,7 @@ export async function PATCH(
               filteredUpdateData.paymentStatus = "refunded";
 
               console.log(
-                `✅ Refunded $${refundAmount} to user wallet for order ${currentOrder.orderNumber}`
+                `✅ Refunded ${formatPrice(refundAmount)} to user wallet for order ${currentOrder.orderNumber}`
               );
             } else {
               console.error(
@@ -183,6 +185,10 @@ export async function PATCH(
       .patch(id)
       .set(filteredUpdateData)
       .commit();
+
+    if (updateData.status === "cancelled" && currentOrder.status !== "cancelled") {
+      await restoreOrderStock(id);
+    }
 
     // Track order status update and send notification if status was changed
     if (updateData.status && updateData.status !== currentOrder.status) {
@@ -242,9 +248,7 @@ export async function PATCH(
 
     return NextResponse.json({
       message: walletRefunded
-        ? `Order updated successfully. $${refundAmount.toFixed(
-            2
-          )} refunded to customer's wallet.`
+        ? `Order updated successfully. ${formatPrice(refundAmount)} refunded to customer's wallet.`
         : "Order updated successfully",
       order: updatedOrder,
       walletRefunded,

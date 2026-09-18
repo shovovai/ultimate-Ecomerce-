@@ -1,7 +1,7 @@
 "use client";
 import { Loader2, Search, X, TrendingUp, Clock, Star } from "lucide-react";
 import { useCallback, useEffect, useState, useRef } from "react";
-import { client } from "@/sanity/lib/client";
+import { catalogFetch } from "@/lib/publicFetch";
 import { Input } from "../ui/input";
 import AddToCartButton from "../AddToCartButton";
 import { urlFor } from "@/sanity/lib/image";
@@ -9,7 +9,6 @@ import { Product } from "@/sanity.types";
 import PriceView from "../PriceView";
 import Image from "next/image";
 import Link from "next/link";
-import Logo from "./Logo";
 import { useOutsideClick } from "@/hooks";
 
 const SearchBar = () => {
@@ -29,8 +28,7 @@ const SearchBar = () => {
 
   const fetchFeaturedProducts = useCallback(async () => {
     try {
-      const query = `*[_type == "product" && isFeatured == true] | order(name asc)`;
-      const response = await client.fetch(query);
+      const response = await catalogFetch("featured");
       setFeaturedProduct(response);
     } catch (error) {
       console.error("Error fetching featured products:", error);
@@ -91,9 +89,7 @@ const SearchBar = () => {
 
     setLoading(true);
     try {
-      const query = `*[_type == "product" && name match $search] | order(name asc)`;
-      const params = { search: `${search}*` };
-      const response = await client.fetch(query, params);
+      const response = await catalogFetch("search", { search });
       setProducts(response);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -113,23 +109,23 @@ const SearchBar = () => {
   return (
     <>
       {/* Search Trigger Button - Modern Input Style */}
-      <div className="flex">
+      <div className="flex w-full">
         {/* Desktop Version - Full Input Style */}
         <button
           onClick={() => setShowSearch(true)}
-          className="group hidden sm:flex items-center gap-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-shop_light_green rounded-lg px-3 py-2 transition-all duration-200 min-w-[200px] md:min-w-[240px]"
+          className="group hidden sm:flex w-full items-center gap-3 bg-sand hover:bg-white border border-transparent hover:border-clay/40 rounded-full px-4 py-2.5 transition-all duration-200 min-w-[200px]"
           aria-label={`Open search (${isMac ? "Cmd" : "Ctrl"}+K)`}
         >
           {/* Search Icon */}
           <Search className="w-4 h-4 text-gray-400 group-hover:text-shop_dark_green transition-colors duration-200 flex-shrink-0" />
 
           {/* Placeholder Text */}
-          <span className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors duration-200 flex-1 text-left">
-            Search products...
+          <span className="text-sm text-light-color group-hover:text-ink transition-colors duration-200 flex-1 text-left">
+            Search for products, brands and more…
           </span>
 
           {/* Keyboard Shortcut Badge */}
-          <div className="flex items-center gap-1 bg-white border border-gray-200 group-hover:border-gray-300 px-2 py-1 rounded text-xs text-gray-500 font-mono flex-shrink-0 transition-colors duration-200">
+          <div className="hidden md:flex items-center gap-1 bg-white border border-border px-2 py-0.5 rounded-full text-[11px] text-light-color font-mono flex-shrink-0">
             <span>{isMac ? "⌘" : "Ctrl"}</span>
             <span>K</span>
           </div>
@@ -138,7 +134,7 @@ const SearchBar = () => {
         {/* Mobile Version - Icon Only */}
         <button
           onClick={() => setShowSearch(true)}
-          className="group flex sm:hidden items-center justify-center p-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-shop_btn_dark_green rounded-lg hoverEffect"
+          className="group flex sm:hidden items-center justify-center p-2.5 bg-sand hover:bg-white rounded-full hoverEffect"
           aria-label="Open search"
         >
           <Search className="w-4 h-4 text-gray-400 group-hover:text-shop_dark_green transition-colors duration-200" />
@@ -334,7 +330,7 @@ const SearchBar = () => {
                         </h3>
                         <div className="text-gray-600 mb-6">
                           <p>Search and explore thousands of products from</p>{" "}
-                          <Logo className="inline text-base font-bold text-shop_dark_green" />
+                          <span className="font-display font-semibold text-clay">WebHaat</span>
                         </div>
 
                         {/* Featured Products Suggestions */}

@@ -31,7 +31,9 @@ This document explains what the system does, where data is stored, how it is set
 
 - Product catalog with categories, brands, deals, search and filters (price, brand, category)
 - Cart, wishlist, checkout with saved addresses
-- Payments: **Stripe** (card), **Clerk** billing, and **Cash on Delivery**
+- Payments: **Cash on Delivery**, **SSLCommerz** (bKash, Nagad, Rocket, cards — Bangladesh) and **Stripe** (international cards). Online methods appear automatically once their keys are set
+- **Coupons / discount codes** in the cart and at checkout (percent or fixed, minimum order, expiry, usage limits)
+- Totals are always calculated on the server — prices can't be changed from the browser
 - Customer account: orders, order tracking timeline, invoices, profile, notifications
 - Reward and loyalty points, wallet (refund credit) and withdrawal requests
 - Product reviews (verified purchases, admin moderation)
@@ -49,7 +51,8 @@ This document explains what the system does, where data is stored, how it is set
 | **Analytics** | Sales and revenue charts by period, order status and payment method breakdowns, best-selling products |
 | **Reports & Export** | Customer insights (repeat rate, average order value, customer value, segments, top customers, top products, top cities, new customers per month) and **Excel/CSV export** of orders, customers, products, subscribers and reviews |
 | **Orders** | Search, filter and update orders; assign employees; refunds to wallet; cancellations |
-| **Products** | Browse, search and inspect the catalog (read-only). Create and edit products in Sanity Studio (`/studio`) |
+| **Products** | Create, edit and delete products: images (upload), price, discount, stock, categories, brand, badge, featured |
+| **Coupons** | Create discount codes, set limits and expiry, switch them on/off, see how often each was used |
 | **Reviews** | Approve or reject customer reviews; product ratings are recalculated |
 | **Users** | Customer list (Clerk + Sanity), details, activation, sync |
 | **Account Requests** | Approve or reject Premium and Business account applications |
@@ -92,7 +95,7 @@ Role-based order processing for staff: Call Center → Packer → Warehouse → 
 | Framework | Next.js 16 (App Router, Turbopack), React 19, TypeScript | Pages, API routes, server actions |
 | Database / CMS | **Sanity Content Lake** | All store data: products, orders, users, reviews, settings… |
 | Authentication | **Clerk** | Sign-up/sign-in, sessions, user profiles |
-| Payments | **Stripe** Checkout + webhook, Clerk billing, Cash on Delivery | Taking payment |
+| Payments | Cash on Delivery, **SSLCommerz** hosted checkout + IPN, **Stripe** Checkout + webhook | Taking payment |
 | Email | Nodemailer via Gmail OAuth2 | Order confirmations, newsletters, campaigns |
 | Analytics | Firebase Analytics (optional) | Browser event tracking |
 | UI | Tailwind CSS 4, Radix UI (shadcn/ui), Framer Motion, Recharts | Styling, components, charts |
@@ -101,10 +104,11 @@ Role-based order processing for staff: Call Center → Packer → Warehouse → 
 **Request flow example — placing an order**
 
 1. The customer adds items to the cart (stored in the browser with Zustand).
-2. At checkout the order is created in Sanity (`order` document, status `pending`).
-3. Card payments go to Stripe Checkout. Stripe calls `/api/webhook` (`checkout.session.completed`), which marks the order as paid.
-4. A confirmation email is sent through Nodemailer.
-5. Staff move the order through the pipeline in `/employee`, and admins can follow it in `/admin/orders`.
+2. Cart and checkout show totals from `/api/checkout/quote`, which re-prices every item from Sanity (plus business discount, coupon, shipping and tax — see `lib/pricing.ts`).
+3. `/api/orders` prices the cart again on the server, reserves stock, records coupon usage and creates the `order` document. Client-sent totals are ignored.
+4. Online payments: the customer is sent to SSLCommerz or Stripe for **exactly the stored order total**. SSLCommerz (`/api/payments/sslcommerz/*`) and Stripe (`/api/webhook`) confirm the payment server-to-server before the order is marked paid.
+5. A confirmation email goes to the customer and a "new order" email to every admin.
+6. Staff move the order through the pipeline in `/employee`, and admins can follow it in `/admin/orders`. Cancelling an order puts its stock back.
 
 **Who is an admin?** Any signed-in user whose email is listed in `NEXT_PUBLIC_ADMIN_EMAIL`. This is checked on the server for every admin page, admin API route and admin server action.
 
@@ -130,6 +134,7 @@ WebHaat has no separate SQL/Mongo database. **Sanity is the database.** Data is 
 | `review` | Product reviews with rating, status (`pending`/`approved`/`rejected`) and admin notes |
 | `subscription` | Newsletter subscribers (email, status, source) |
 | `emailCampaign` | History of campaigns sent from the admin panel |
+| `coupon` | Discount codes (type, value, limits, expiry, times used) |
 | `storeSettings` | Singleton with admin branding, store info and announcement bar |
 | `sentNotification` | Notifications sent by admins |
 | `userAccessRequest` | Access and approval requests |
@@ -219,9 +224,11 @@ All settings live in `.env` (copy it from `.env.example`). **Never commit `.env`
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | yes | Clerk publishable key |
 | `CLERK_SECRET_KEY` | yes | Clerk secret key |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `..._SIGN_UP_URL` | yes | `/sign-in` and `/sign-up` |
-| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` / `..._AFTER_SIGN_UP_URL` | yes | `/` |
-| `STRIPE_SECRET_KEY` | yes* | Stripe secret key. *The build fails without it; use a test key if you only use Cash on Delivery |
-| `STRIPE_WEBHOOK_SECRET` | for card payments | Signing secret of the `/api/webhook` endpoint |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` / `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` | yes | `/` |
+| `STRIPE_SECRET_KEY` | no | Stripe secret key. Leave empty to hide card payments |
+| `STRIPE_WEBHOOK_SECRET` | with Stripe | Signing secret of the `/api/webhook` endpoint |
+| `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD` | no | SSLCommerz credentials. Leave empty to hide bKash/Nagad/card via SSLCommerz |
+| `SSLCOMMERZ_SANDBOX` | no | `true` (default) for the sandbox, `false` for live payments |
 | `NEXT_PUBLIC_ADMIN_EMAIL` | yes | Admin emails, comma-separated: `owner@shop.com,manager@shop.com` |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `SENDER_EMAIL_ADDRESS` | for emails | Gmail OAuth2 used by Nodemailer |
 | `NEXT_PUBLIC_COMPANY_NAME` | no | Store name (default `WebHaat`) |
@@ -230,7 +237,13 @@ All settings live in `.env` (copy it from `.env.example`). **Never commit `.env`
 | `NEXT_PUBLIC_SUPPORT_EMAIL`, `NEXT_PUBLIC_SALES_EMAIL` | no | Contact emails |
 | `NEXT_PUBLIC_FACEBOOK_URL`, `NEXT_PUBLIC_TWITTER_URL`, `NEXT_PUBLIC_INSTAGRAM_URL`, `NEXT_PUBLIC_LINKEDIN_URL`, `NEXT_PUBLIC_YOUTUBE_URL` | no | Social links in the footer |
 | `NEXT_PUBLIC_COMPANY_DESCRIPTION`, `NEXT_PUBLIC_COPYRIGHT_TEXT` | no | SEO description and footer copyright |
-| `TAX_AMOUNT` | no | Tax rate as a decimal (e.g. `0.05` = 5%). Default `0` |
+| `NEXT_PUBLIC_CURRENCY` | no | Store currency code: `USD` (default), `BDT`, `EUR`, `INR`… |
+| `NEXT_PUBLIC_LOCALE` | no | Number format, e.g. `en-US`, `en-BD`, `bn-BD` |
+| `NEXT_PUBLIC_FREE_SHIPPING_THRESHOLD` | no | Subtotal for free delivery (default `100`, `0` = always free) |
+| `NEXT_PUBLIC_SHIPPING_FEE` | no | Delivery fee below the threshold (default `10`) |
+| `NEXT_PUBLIC_TAX_RATE` | no | Tax as a decimal: `0.05` = 5% (default `0`) |
+| `NEXT_PUBLIC_BUSINESS_DISCOUNT_RATE` | no | Extra discount for business accounts (default `0.02` = 2%) |
+| `NEXT_PUBLIC_PRICE_BUCKETS` | no | Shop price filter steps, e.g. `500,1000,5000,10000` for BDT |
 | `REWARD_POINTS_THRESHOLD`, `REWARD_POINTS_AMOUNT` | no | Reward points rules |
 | `LOYALTY_POINTS_ORDER_THRESHOLD`, `LOYALTY_POINTS_AMOUNT` | no | Loyalty points rules |
 | `NEXT_PUBLIC_FIREBASE_*` | no | Firebase Analytics config (browser event tracking) |
@@ -263,6 +276,13 @@ All settings live in `.env` (copy it from `.env.example`). **Never commit `.env`
    stripe listen --forward-to localhost:3000/api/webhook
    ```
 
+### SSLCommerz (bKash, Nagad, Rocket, cards — Bangladesh)
+
+1. Create a free sandbox account at [developer.sslcommerz.com](https://developer.sslcommerz.com/registration/) — you receive a **Store ID** and **Store Password** by email.
+2. Put them in `SSLCOMMERZ_STORE_ID` / `SSLCOMMERZ_STORE_PASSWORD` and set `NEXT_PUBLIC_CURRENCY=BDT`.
+3. Test with the sandbox (`SSLCOMMERZ_SANDBOX=true`). For real payments, apply for a live merchant account, use the live credentials and set `SSLCOMMERZ_SANDBOX=false`.
+4. `NEXT_PUBLIC_BASE_URL` must be your public site URL: SSLCommerz sends customers back to `/api/payments/sslcommerz/success|fail|cancel` and notifies `/api/payments/sslcommerz/ipn`. For local testing use a tunnel such as `ngrok http 3000`.
+
 ### Email (Gmail OAuth2 via Nodemailer)
 
 1. In [Google Cloud Console](https://console.cloud.google.com) create an OAuth client (Web application) and enable the Gmail API.
@@ -288,6 +308,8 @@ Create a Firebase project, add a Web app, and copy its config into the `NEXT_PUB
   - Pick a range (30 days, 90 days, 12 months, or all time) for customer insights.
   - *Export data*: choose optional From/To dates, then click Orders, Customers, Products, Subscribers or Reviews. A `.csv` file downloads and opens directly in Excel or Google Sheets.
 - **Orders** — open an order to change its status, assign staff, or refund to the customer's wallet.
+- **Products** — **New product** opens the editor: upload images (the first is the main image), set price, discount, stock, categories, brand and badge. The *Hot* badge puts a product on the Deals page. Products that appear in past orders are set to out of stock instead of deleted.
+- **Coupons** — create codes like `WELCOME10`: percentage or fixed amount, optional minimum subtotal, maximum discount, start/end dates, total uses and *once per customer*. Toggle a code off at any time.
 - **Reviews** — the *Pending* tab lists new reviews. Approve to publish or reject with a note.
 - **Account Requests** — approve Premium or Business applications. The sidebar badge shows how many are pending.
 - **Email Marketing**
@@ -358,8 +380,12 @@ Run it behind a reverse proxy (Nginx or Caddy) with HTTPS, and use a process man
 
 ## 12. Security notes
 
+- **Make your Sanity dataset private.** Orders, customers and addresses are stored in Sanity. In a *public* dataset anyone can read them through Sanity's API. Go to [sanity.io/manage](https://www.sanity.io/manage) → your project → **Datasets** → `production` → set visibility to **Private**. The site keeps working because the server reads with `SANITY_API_READ_TOKEN`.
+- All order totals are computed on the server (`lib/pricing.ts`); payment gateways are charged the stored total and payments are verified server-to-server before an order is marked paid.
+
 - Admin rights come only from `NEXT_PUBLIC_ADMIN_EMAIL`. Every `/api/admin/*` route calls `requireAdmin()` (`lib/adminAuth.ts`), and the admin layout verifies the user on the server.
 - Employee-management server actions check that the caller is an admin, and order-processing actions check the employee's role.
+- The fake "Clerk payment" gateway from the original template was removed, and so was the open `/api/orders/send-email` endpoint.
 - Wallet credits can only be added from server code (`lib/walletCredit.ts`). They cannot be triggered from the browser.
 - CSV exports neutralize spreadsheet formulas to prevent CSV injection.
 - Keep `SANITY_API_TOKEN`, `CLERK_SECRET_KEY`, `STRIPE_SECRET_KEY` and the Google secrets private. If they were ever committed to git or shared, **rotate them** in each provider's dashboard.
@@ -371,7 +397,9 @@ Run it behind a reverse proxy (Nginx or Caddy) with HTTPS, and use a process man
 | Problem | Fix |
 | --- | --- |
 | `Missing environment variable: NEXT_PUBLIC_SANITY_...` | Fill in the Sanity variables in `.env` and restart |
-| Build error `STRIPE_SECRET_KEY is not set` | Add a Stripe key (a test key works) |
+| Card / SSLCommerz option missing at checkout | The keys for that gateway are empty in `.env` — only configured methods are shown |
+| Products or pages show nothing after making the dataset private | Set `SANITY_API_READ_TOKEN` (Viewer token) and restart |
+| Coupon "not valid" | Check it is active, not expired, under its usage limit and the cart meets the minimum subtotal |
 | `/admin` redirects to access-denied | Your sign-in email must be listed exactly in `NEXT_PUBLIC_ADMIN_EMAIL`. Restart after changing `.env` |
 | Products don't appear | Publish them in `/studio`, and check CORS origins and the dataset name |
 | Orders stay unpaid after Stripe payment | Check the webhook URL (`/api/webhook`) and `STRIPE_WEBHOOK_SECRET`. Locally, run `stripe listen` |

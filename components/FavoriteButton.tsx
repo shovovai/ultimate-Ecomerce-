@@ -68,7 +68,7 @@ const FavoriteButton = ({
           <Heart className="group-hover:text-shop_light_green hoverEffect mt-.5" />
           {/* {isArray(favoriteProduct) && favoriteProduct.length > 0 && ( */}
           <span
-            className={`absolute -top-1 -right-1 bg-shop_btn_dark_green text-white rounded-full text-xs font-semibold flex items-center justify-center min-w-[14px] h-[14px] ${
+            className={`absolute -top-1 -right-1 bg-clay text-white rounded-full text-[10px] ring-2 ring-cream font-semibold flex items-center justify-center min-w-[16px] h-[16px] ${
               favoriteProduct.length > 9 ? "px-1" : ""
             }`}
           >
@@ -87,7 +87,7 @@ const FavoriteButton = ({
           className="group relative hover:text-shop_light_green hoverEffect border border-shop_light_green/80 p-1.5 rounded-sm "
         >
           <Heart
-            fill={existingProduct ? "#063c28" : "#fff"}
+            fill={existingProduct ? "#c2542d" : "#fff"}
             className="text-shop_light_green/80 group-hover:text-shop_light_green hoverEffect mt-.5"
           />
         </button>

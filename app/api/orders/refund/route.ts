@@ -1,11 +1,10 @@
+import { restoreOrderStock } from "@/lib/stock";
+import { formatPrice } from "@/lib/storeConfig";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeClient, client } from "@/sanity/lib/client";
-import Stripe from "stripe";
+import stripe from "@/lib/stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-10-29.clover",
-});
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -112,6 +111,7 @@ export async function POST(req: NextRequest) {
         stripeRefundId: stripeRefundId || undefined,
       })
       .commit();
+    await restoreOrderStock(orderId);
 
     // If there's a refund amount, add it to user's wallet
     if (refundAmount > 0) {
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
           .commit();
 
         console.log(
-          `Added $${refundAmount} to user wallet. New balance: $${newBalance}`
+          `Added ${formatPrice(refundAmount)} to user wallet. New balance: ${formatPrice(newBalance)}`
         );
       }
     }

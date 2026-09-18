@@ -1,73 +1,34 @@
-"use client";
-import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { emptyCart } from "@/images";
-import Image from "next/image";
+import { ArrowRight, ShoppingBag } from "lucide-react";
 
 export default function EmptyCart() {
   return (
-    <div className="py-10 md:py-20 bg-linear-to-b from-blue-50 to-white flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full space-y-8"
-      >
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            rotate: [0, 5, -5, 0],
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 5,
-            ease: "easeInOut",
-          }}
-          className="relative w-48 h-48 mx-auto"
+    <div className="mx-auto flex max-w-md flex-col items-center py-16 text-center">
+      <div className="relative mb-8">
+        <div className="flex h-32 w-32 items-center justify-center rounded-full bg-sand">
+          <ShoppingBag className="h-14 w-14 text-clay" strokeWidth={1.5} />
+        </div>
+        <span className="absolute -right-1 top-2 h-6 w-6 rounded-full bg-marigold" />
+      </div>
+      <h2 className="font-display text-3xl text-ink">Your basket is empty</h2>
+      <p className="mt-3 text-light-color">
+        Looks like you haven&apos;t picked anything yet. The haat is full of good
+        finds — have a look around.
+      </p>
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Link
+          href="/shop"
+          className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-cream transition-colors hover:bg-clay"
         >
-          <Image
-            src={emptyCart}
-            alt="Empty shopping cart"
-            layout="fill"
-            objectFit="contain"
-            className="drop-shadow-lg"
-          />
-          <motion.div
-            animate={{
-              x: [0, -10, 10, 0],
-              y: [0, -5, 5, 0],
-            }}
-            transition={{
-              repeat: Infinity,
-              duration: 3,
-              ease: "linear",
-            }}
-            className="absolute -top-4 -right-4 bg-blue-500 rounded-full p-2"
-          >
-            <ShoppingCart size={24} className="text-white" />
-          </motion.div>
-        </motion.div>
-
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold text-gray-800">
-            Your cart is feeling lonely
-          </h2>
-          <p className="text-gray-600">
-            It looks like you haven&apos;t added anything to your cart yet.
-            Let&apos;s change that and find some amazing products for you!
-          </p>
-        </div>
-
-        <div>
-          <Link
-            href="/"
-            className="block bg-dark-color/5 border border-dark-color/20 text-center py-2.5 rounded-full text-sm font-semibold tracking-wide hover:border-dark-color hover:bg-dark-color hover:text-white hoverEffect"
-          >
-            Discover Products
-          </Link>
-        </div>
-      </motion.div>
+          Start shopping <ArrowRight className="h-4 w-4" />
+        </Link>
+        <Link
+          href="/deal"
+          className="rounded-full border border-ink/15 px-6 py-3 text-sm font-semibold text-ink hover:border-ink"
+        >
+          See today&apos;s deals
+        </Link>
+      </div>
     </div>
   );
 }

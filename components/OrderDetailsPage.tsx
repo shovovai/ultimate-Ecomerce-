@@ -66,6 +66,7 @@ interface OrderDetailsPageProps {
     totalPrice: number;
     currency: string;
     amountDiscount: number;
+    couponCode?: string;
     address: {
       name: string;
       address: string;
@@ -293,6 +294,13 @@ const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({ order }) => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
+          {currentOrder.paymentStatus !== "paid" &&
+            currentOrder.status !== "cancelled" &&
+            currentOrder.paymentMethod !== "cash_on_delivery" && (
+              <Button asChild className="bg-clay hover:bg-clay-dark">
+                <Link href={`/checkout?orderId=${currentOrder._id}`}>Pay now</Link>
+              </Button>
+            )}
           {currentOrder.invoice?.hosted_invoice_url ? (
             <Button asChild variant="outline">
               <Link
@@ -554,8 +562,8 @@ const OrderDetailsPage: React.FC<OrderDetailsPageProps> = ({ order }) => {
                   <PriceFormatter amount={currentOrder.shipping} />
                 </div>
                 {currentOrder.amountDiscount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount</span>
+                  <div className="flex justify-between text-sage">
+                    <span>Discount{currentOrder.couponCode ? ` (${currentOrder.couponCode})` : ""}</span>
                     <span>
                       -<PriceFormatter amount={currentOrder.amountDiscount} />
                     </span>

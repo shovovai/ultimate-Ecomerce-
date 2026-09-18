@@ -23,7 +23,7 @@ const PriceView = ({ price, discount, className }: Props) => {
         {/* Current/Payable Price (discounted price) */}
         <PriceFormatter
           amount={currentPrice}
-          className={cn("text-shop_dark_green font-semibold", className)}
+          className={cn("text-ink font-bold", className)}
         />
 
         {/* Gross Price (original price before discount) - only show if there's a discount */}
@@ -32,11 +32,11 @@ const PriceView = ({ price, discount, className }: Props) => {
             <PriceFormatter
               amount={grossPrice}
               className={twMerge(
-                "line-through text-xs font-normal text-zinc-500",
+                "line-through text-xs font-normal text-light-text",
                 className
               )}
             />
-            <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
+            <span className="rounded-full bg-clay/10 px-1.5 py-0.5 text-xs font-semibold text-clay">
               -{discount}%
             </span>
           </div>

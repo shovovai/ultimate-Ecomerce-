@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import crypto from "crypto";
 import { getMyOrders } from "@/sanity/helpers";
-import { writeClient } from "@/sanity/lib/client";
+import { backendClient } from "@/sanity/lib/backendClient";
 import {
   ORDER_STATUSES,
   PAYMENT_STATUSES,
   PAYMENT_METHODS,
 } from "@/lib/orderStatus";
-import crypto from "crypto";
 import { sendOrderStatusNotification } from "@/lib/notificationService";
-
-interface CartItem {
-  product: {
-    _id: string;
-    name?: string;
-    price?: number;
-    category?: string;
-  };
-  quantity: number;
-}
+import {
+  PricingError,
+  normalizeCartInput,
+  priceCart,
+} from "@/lib/pricing";
+import { reserveStock } from "@/lib/stock";
+import { sendAdminNewOrderEmail, sendCustomerOrderEmail } from "@/lib/orderEmails";
+import { availablePaymentMethods } from "@/lib/paymentMethods";
 
 export async function GET() {
   try {
@@ -40,9 +38,14 @@ export async function GET() {
   }
 }
 
+const str = (v: unknown, max = 200) =>
+  typeof v === "string" ? v.trim().slice(0, max) : "";
+
+// POST /api/orders
+// Body: { items: [{ productId, quantity }], shippingAddress, paymentMethod, couponCode? }
+// All amounts are calculated on the server — client-sent totals are ignored.
 export const POST = async (request: NextRequest) => {
   try {
-    // Check authentication
     const { userId } = await auth();
     const user = await currentUser();
 
@@ -50,75 +53,77 @@ export const POST = async (request: NextRequest) => {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const reqBody = await request.json();
-    const {
-      items,
-      shippingAddress,
-      paymentMethod,
-      totalAmount,
-      subtotal,
-      shipping,
-      tax,
-    } = reqBody;
+    const body = await request.json();
+    const items = normalizeCartInput(body.items);
+    const paymentMethod = body.paymentMethod;
+    const addr = body.shippingAddress || {};
 
-    // Validate required fields
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (items.length === 0) {
       return NextResponse.json({ error: "No items provided" }, { status: 400 });
     }
 
-    if (!shippingAddress) {
+    const shippingAddress = {
+      name: str(addr.name, 100),
+      address: str(addr.address, 300),
+      city: str(addr.city, 100),
+      state: str(addr.state, 100),
+      zip: str(addr.zip, 20),
+      phone: str(addr.phone, 30),
+    };
+    if (!shippingAddress.address || !shippingAddress.city) {
       return NextResponse.json(
         { error: "Shipping address is required" },
         { status: 400 }
       );
     }
 
-    if (
-      !paymentMethod ||
-      !Object.values(PAYMENT_METHODS).includes(paymentMethod)
-    ) {
+    if (!availablePaymentMethods().includes(paymentMethod)) {
       return NextResponse.json(
-        { error: "Invalid payment method" },
+        { error: "This payment method is not available" },
         { status: 400 }
       );
     }
 
-    // Generate order number
-    const orderNumber = `ORDER-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)
+    const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress || "";
+    const userName =
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() || shippingAddress.name || "Customer";
+
+    const pricing = await priceCart(items, {
+      couponCode: body.couponCode,
+      clerkUserId: userId,
+      email: userEmail,
+      strictCoupon: Boolean(body.couponCode),
+    });
+
+    const orderNumber = `WH-${Date.now().toString(36).toUpperCase()}-${crypto
+      .randomBytes(2)
+      .toString("hex")
       .toUpperCase()}`;
 
-    const userEmail = user.emailAddresses[0]?.emailAddress;
-    const userName =
-      `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
-    const userPhone =
-      user.phoneNumbers?.[0]?.phoneNumber || shippingAddress.phone || "";
-
-    // Create order object
-    const orderData = {
-      _type: "order" as const,
+    const createdOrder = await backendClient.create({
+      _type: "order",
       orderNumber,
       customerName: userName,
       email: userEmail,
-      phone: userPhone,
+      phone: user.phoneNumbers?.[0]?.phoneNumber || shippingAddress.phone,
       clerkUserId: userId,
-      products: items.map(
-        (item: { product: { _id: string }; quantity: number }) => ({
-          _key: crypto.randomUUID(), // Generate unique key for each product item
-          product: {
-            _type: "reference",
-            _ref: item.product._id,
-          },
-          quantity: item.quantity,
-        })
-      ),
-      totalPrice: totalAmount,
-      currency: "USD",
-      amountDiscount: 0, // Can be calculated if you have discount logic
+      products: pricing.lines.map((line) => ({
+        _key: crypto.randomUUID(),
+        product: { _type: "reference", _ref: line.productId },
+        quantity: line.quantity,
+      })),
+      subtotal: pricing.subtotal,
+      amountDiscount: pricing.discountTotal,
+      businessDiscount: pricing.businessDiscount,
+      couponCode: pricing.coupon?.code,
+      couponDiscount: pricing.coupon?.amount || 0,
+      shipping: pricing.shipping,
+      tax: pricing.tax,
+      totalPrice: pricing.total,
+      currency: pricing.currency,
       address: {
         _type: "object",
-        name: shippingAddress.name,
+        name: shippingAddress.name || userName,
         address: shippingAddress.address,
         city: shippingAddress.city,
         state: shippingAddress.state,
@@ -127,136 +132,64 @@ export const POST = async (request: NextRequest) => {
       status: ORDER_STATUSES.PENDING,
       orderDate: new Date().toISOString(),
       paymentMethod,
-      paymentStatus:
-        paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY
-          ? PAYMENT_STATUSES.PENDING
-          : PAYMENT_STATUSES.PENDING,
-      subtotal,
-      shipping,
-      tax,
-      // Add payment-specific fields based on payment method
-      ...(paymentMethod === PAYMENT_METHODS.STRIPE && {
-        stripeCustomerId: "", // Will be populated when needed for invoicing
-        stripePaymentIntentId: "", // Will be populated for Stripe payments
-        stripeCheckoutSessionId: "", // Will be populated for Stripe payments
-      }),
-      ...(paymentMethod === PAYMENT_METHODS.CLERK && {
-        clerkPaymentId: "", // Will be populated for Clerk payments
-        clerkPaymentStatus: "pending", // Initial status
-      }),
+      paymentStatus: PAYMENT_STATUSES.PENDING,
       ...(paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY && {
         stripePaymentIntentId: `cod_${orderNumber}`,
       }),
-    };
+    });
 
-    // Create order in Sanity using writeClient (has create permissions)
-    const createdOrder = await writeClient.create(orderData);
-
-    // Track order placed event
-    try {
-      await fetch(
-        `${
-          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-        }/api/analytics/track`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            eventName: "order_placed",
-            eventParams: {
-              orderId: createdOrder._id,
-              orderNumber: createdOrder.orderNumber,
-              amount: totalAmount,
-              status: createdOrder.status,
-              userId: userId,
-              paymentMethod: paymentMethod,
-              itemCount: items.length,
-              subtotal: subtotal,
-              shipping: shipping,
-              tax: tax,
-              customerEmail: userEmail,
-              products: items.map((item: CartItem) => ({
-                productId: item.product._id,
-                name: item.product.name || "Unknown Product",
-                quantity: item.quantity,
-                price: item.product.price || 0,
-              })),
-            },
-          }),
-        }
-      );
-
-      // Also track purchase event for e-commerce analytics
-      await fetch(
-        `${
-          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-        }/api/analytics/track`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            eventName: "purchase",
-            eventParams: {
-              orderId: createdOrder._id,
-              value: totalAmount,
-              currency: "USD",
-              items: items.map((item: CartItem) => ({
-                productId: item.product._id,
-                name: item.product.name || "Unknown Product",
-                category: item.product.category || "Uncategorized",
-                quantity: item.quantity,
-                price: item.product.price || 0,
-              })),
-              userId: userId,
-            },
-          }),
-        }
-      );
-    } catch (analyticsError) {
-      console.error("Failed to track order placed event:", analyticsError);
+    // Side effects: stock, coupon usage, notifications, emails
+    await reserveStock(createdOrder._id, pricing.lines).catch((e) =>
+      console.error("Stock reservation failed:", e)
+    );
+    if (pricing.coupon) {
+      await backendClient
+        .patch(pricing.coupon._id)
+        .setIfMissing({ usedCount: 0 })
+        .inc({ usedCount: 1 })
+        .commit()
+        .catch((e) => console.error("Coupon usage update failed:", e));
     }
 
-    // Send order confirmation notification to user
-    try {
-      await sendOrderStatusNotification({
+    const emailInput = {
+      orderId: createdOrder._id,
+      orderNumber,
+      customerName: userName,
+      customerEmail: userEmail,
+      paymentMethod,
+      pricing,
+      address: shippingAddress,
+    };
+    await Promise.all([
+      sendCustomerOrderEmail(emailInput),
+      sendAdminNewOrderEmail(emailInput),
+      sendOrderStatusNotification({
         clerkUserId: userId,
-        orderNumber: createdOrder.orderNumber,
+        orderNumber,
         orderId: createdOrder._id,
         status: ORDER_STATUSES.PENDING,
-      });
-    } catch (notificationError) {
-      console.error(
-        "Failed to send order confirmation notification:",
-        notificationError
-      );
-      // Don't fail the order creation if notification fails
-    }
+      }).catch((e) => console.error("Order notification failed:", e)),
+    ]);
 
     return NextResponse.json({
       success: true,
       order: {
         _id: createdOrder._id,
-        orderNumber: createdOrder.orderNumber,
+        orderNumber,
         status: createdOrder.status,
-        paymentMethod: createdOrder.paymentMethod,
-        totalPrice: createdOrder.totalPrice,
-        currency: createdOrder.currency,
+        paymentMethod,
+        totalPrice: pricing.total,
+        currency: pricing.currency,
       },
       message: "Order created successfully",
     });
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    if (error instanceof PricingError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Order creation error:", error);
-    console.error("Error details:", {
-      message: errorMessage,
-      stack: error instanceof Error ? error.stack : null,
-    });
     return NextResponse.json(
-      {
-        error: errorMessage || "Failed to create order",
-        details: error instanceof Error ? error.stack : null,
-      },
+      { error: "Failed to create order. Please try again." },
       { status: 500 }
     );
   }

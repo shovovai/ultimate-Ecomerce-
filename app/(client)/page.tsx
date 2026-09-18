@@ -1,43 +1,37 @@
-import HomeCategories from "@/components/HomeCategories";
-import LatestBlog from "@/components/LatestBlog";
 import HomeBanner from "@/components/HomeBanner";
-import ProductGrid from "@/components/ProductGrid";
+import HomeCategories from "@/components/HomeCategories";
+import HomeProductShowcase from "@/components/HomeProductShowcase";
+import { PromoBand, ValueStrip } from "@/components/HomeHighlights";
 import ShopByBrands from "@/components/ShopByBrands";
-import ShopFeatures from "@/components/ShopFeatures";
+import LatestBlog from "@/components/LatestBlog";
 import { getCategories } from "@/sanity/queries";
 import { generateOrganizationSchema, generateWebsiteSchema } from "@/lib/seo";
 
 export default async function Home() {
-  const categories = await getCategories(8);
+  // 9 = one featured tile (2x2) + 8 regular tiles → three full rows
+  const categories = await getCategories(9);
 
-  // Generate structured data
   const organizationSchema = generateOrganizationSchema();
   const websiteSchema = generateWebsiteSchema();
 
   return (
-    <div>
-      {/* JSON-LD Structured Data */}
+    <div className="pb-4">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(organizationSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(websiteSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
       />
 
       <HomeBanner />
-      <div className="py-10">
-        <ProductGrid />
-        <HomeCategories categories={categories} />
-        <ShopFeatures />
-        <ShopByBrands />
-        <LatestBlog />
-      </div>
+      <ValueStrip />
+      <HomeCategories categories={categories} />
+      <HomeProductShowcase />
+      <PromoBand />
+      <ShopByBrands />
+      <LatestBlog />
     </div>
   );
 }

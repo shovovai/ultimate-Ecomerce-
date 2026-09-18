@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/lib/storeConfig";
 
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
@@ -171,7 +172,7 @@ const AdminAnalytics = () => {
   }) => {
     const isPositive = change >= 0;
     const formatValue = (val: number) => {
-      if (format === "currency") return `$${val.toLocaleString()}`;
+      if (format === "currency") return `${formatPrice(val)}`;
       return val.toLocaleString();
     };
 
@@ -462,7 +463,7 @@ const AdminAnalytics = () => {
                       <Tooltip
                         formatter={(value, name) => [
                           name === "revenue"
-                            ? `$${Number(value ?? 0).toLocaleString()}`
+                            ? `${formatPrice(Number(value ?? 0))}`
                             : value,
                           name === "revenue" ? "Revenue" : "Sales",
                         ]}
@@ -499,7 +500,7 @@ const AdminAnalytics = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
-                  ${analytics?.revenue?.total.toLocaleString() || 0}
+                  {formatPrice(analytics?.revenue?.total)}
                 </div>
                 <div className="text-sm text-green-500">Total Revenue</div>
               </div>

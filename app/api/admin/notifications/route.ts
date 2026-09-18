@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/storeConfig";
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { isUserAdmin } from "@/lib/adminUtils";
@@ -72,9 +73,7 @@ export async function GET(req: NextRequest) {
       ...recentOrders.map((order: Order) => ({
         id: `order-${order._id}`,
         title: `New order ${order.orderNumber || `#${order._id.slice(-6)}`}`,
-        description: `${order.customerName || order.email} - $${
-          order.totalPrice
-        }`,
+        description: `${order.customerName || order.email} - ${formatPrice(order.totalPrice)}`,
         time: getTimeAgo(new Date(order._createdAt)),
         type: "order",
         icon: "shopping-cart",

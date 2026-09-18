@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/lib/storeConfig";
 
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
@@ -172,7 +173,7 @@ const AdminDashboardOverview = () => {
 
   const formatValue = (value: number, format: string) => {
     if (format === "currency") {
-      return `$${value.toLocaleString()}`;
+      return `${formatPrice(value)}`;
     }
     return value.toLocaleString();
   };

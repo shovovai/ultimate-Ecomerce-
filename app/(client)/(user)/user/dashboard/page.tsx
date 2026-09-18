@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/lib/storeConfig";
 
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
@@ -389,7 +390,7 @@ export default function UserDashboardPage() {
           userProfile.isActive &&
           userProfile.premiumStatus === "active" &&
           !userProfile.isBusiness && (
-            <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-400 rounded-lg shadow-sm">
+            <div className="mb-6 p-6 bg-sage/10 border-l-4 border-sage rounded-2xl">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -479,7 +480,7 @@ export default function UserDashboardPage() {
 
         {/* Business Application Status */}
         {userProfile && userProfile.businessStatus === "pending" && (
-          <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-400 rounded-lg shadow-sm">
+          <div className="mb-6 p-6 bg-sand border-l-4 border-clay rounded-2xl">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -536,7 +537,7 @@ export default function UserDashboardPage() {
         {userProfile &&
           userProfile.isBusiness &&
           userProfile.businessStatus === "active" && (
-            <div className="mb-6 p-6 bg-gradient-to-r from-emerald-50 to-green-50 border-l-4 border-emerald-400 rounded-lg shadow-sm">
+            <div className="mb-6 p-6 bg-sage/10 border-l-4 border-sage rounded-2xl">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -622,18 +623,18 @@ export default function UserDashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+        <Card className="bg-ink text-cream border-0 shadow-lg hover:shadow-xl transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <Package className="h-5 w-5" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold mb-1">{stats.ordersCount}</div>
-            <p className="text-xs text-blue-100">Orders placed</p>
+            <p className="text-xs text-cream/60">Orders placed</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+        <Card className="bg-clay text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-sm font-medium">Notifications</CardTitle>
             <Bell className="h-5 w-5" />
@@ -642,36 +643,36 @@ export default function UserDashboardPage() {
             <div className="text-3xl font-bold mb-1">
               {stats.notificationsCount}
             </div>
-            <p className="text-xs text-purple-100">
+            <p className="text-xs text-white/75">
               {stats.unreadNotifications} unread
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+        <Card className="bg-shop_light_pink text-ink border-0 shadow-lg hover:shadow-xl transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-sm font-medium">Wishlist</CardTitle>
             <Heart className="h-5 w-5" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold mb-1">{stats.wishlistCount}</div>
-            <p className="text-xs text-red-100">Items saved</p>
+            <p className="text-xs text-ink/60">Items saved</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-green-500 to-green-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+        <Card className="bg-marigold text-ink border-0 shadow-lg hover:shadow-xl transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-sm font-medium">Reward Points</CardTitle>
             <Star className="h-5 w-5" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold mb-1">{stats.rewardPoints}</div>
-            <p className="text-xs text-green-100">Available points</p>
+            <p className="text-xs text-ink/60">Available points</p>
           </CardContent>
         </Card>
 
         {stats.walletBalance > 0 && (
-          <Card className="bg-linear-to-br from-emerald-500 to-teal-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="bg-sage text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium">
                 Wallet Balance
@@ -680,9 +681,9 @@ export default function UserDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold mb-1">
-                ${stats.walletBalance.toFixed(2)}
+                {formatPrice(stats.walletBalance)}
               </div>
-              <p className="text-xs text-emerald-100">From refunds</p>
+              <p className="text-xs text-white/75">From refunds</p>
             </CardContent>
           </Card>
         )}

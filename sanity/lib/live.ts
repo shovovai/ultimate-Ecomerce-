@@ -19,7 +19,7 @@ if (!token) {
 export const { sanityFetch, SanityLive } = defineLive({
   client,
   serverToken: token,
-  browserToken: token,
+  // No browserToken: never ship a read token to visitors (dataset should be private)
   fetchOptions: {
     revalidate: 0,
   },

@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/lib/storeConfig";
 
 import React, { useState } from "react";
 import {
@@ -193,9 +194,7 @@ const OrderDetailsSidebar: React.FC<OrderDetailsSidebarProps> = ({
       // Show success message with refund info if applicable
       if (result.walletRefunded && result.refundAmount) {
         showToast.success(
-          `Order updated successfully! $${result.refundAmount.toFixed(
-            2
-          )} refunded to customer's wallet.`
+          `Order updated successfully! ${formatPrice(result.refundAmount)} refunded to customer's wallet.`
         );
       } else {
         showToast.success("Order updated successfully");
