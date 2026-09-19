@@ -2,7 +2,7 @@
 
 import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { Loader2, ShieldCheck, TicketPercent, Truck, X } from "lucide-react";
-import { formatPrice, storeConfig } from "@/lib/storeConfig";
+import { formatPrice } from "@/lib/storeConfig";
 import type { QuotePricing } from "@/hooks/useCheckoutQuote";
 import { cn } from "@/lib/utils";
 
@@ -40,10 +40,7 @@ export default function OrderSummary({
     onCouponChange(input);
   };
 
-  const freeShipLeft =
-    pricing && storeConfig.freeShippingThreshold > 0 && pricing.shipping > 0
-      ? storeConfig.freeShippingThreshold - (pricing.subtotal - pricing.businessDiscount)
-      : 0;
+  const freeShipLeft = pricing?.freeDeliveryLeft ?? 0;
 
   return (
     <aside className={cn("rounded-3xl border border-border bg-white p-6 shadow-sm", className)}>
@@ -112,12 +109,11 @@ export default function OrderSummary({
             <Row label={`Coupon (${pricing.coupon.code})`} value={`-${formatPrice(pricing.coupon.amount)}`} accent />
           )}
           <Row
-            label="Shipping"
+            label="Delivery charge"
             value={pricing.shipping === 0 ? "Free" : formatPrice(pricing.shipping)}
             muted
           />
           {pricing.tax > 0 && <Row label="Tax" value={formatPrice(pricing.tax)} muted />}
-          {pricing.paymentFee > 0 && <Row label="Payment fee" value={formatPrice(pricing.paymentFee)} muted />}
           <div className="border-t border-dashed border-border pt-4">
             <div className="flex items-end justify-between">
               <span className="font-semibold text-ink">Total</span>

@@ -12,8 +12,9 @@ export interface QuotePricing {
   couponError?: string;
   discountTotal: number;
   shipping: number;
+  /** Amount still needed for free delivery (0 when free or not offered) */
+  freeDeliveryLeft?: number;
   tax: number;
-  paymentFee: number;
   total: number;
   currency: string;
 }

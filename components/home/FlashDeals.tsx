@@ -24,7 +24,7 @@ const FlashDeals = ({ products }: { products: Product[] }) => {
           </div>
           <div className="relative flex items-center justify-between gap-4 sm:justify-end">
             <div className="flex items-center gap-2.5">
-              <span className="text-xs text-cream/60">Ends in</span>
+              <span className="whitespace-nowrap text-xs text-cream/60">Ends in</span>
               <DealTimer />
             </div>
             <Link

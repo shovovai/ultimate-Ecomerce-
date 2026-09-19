@@ -283,7 +283,7 @@ const SearchBar = () => {
                             <PriceView
                               price={product?.price}
                               discount={product?.discount}
-                              className="text-sm sm:text-base"
+                              size="sm"
                             />
 
                             <div className="flex items-center gap-2">

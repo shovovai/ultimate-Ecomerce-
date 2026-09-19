@@ -14,6 +14,7 @@ import { trackProductView } from "@/lib/analytics";
 import { recordRecentlyViewed } from "@/lib/recentlyViewed";
 import { formatPrice, storeConfig } from "@/lib/storeConfig";
 import { BRAND_QUERYResult, Product } from "@/sanity.types";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 
 interface ProductContentProps {
   product: Product;
@@ -26,6 +27,7 @@ const ProductContent = ({ product, relatedProducts, brand }: ProductContentProps
   const totalReviews = product?.totalReviews || 0;
   const brandName = brand?.[0]?.brandName;
   const stock = product?.stock ?? 0;
+  const { deliveryCharge, freeDeliveryOver } = useSiteSettings();
 
   // Phones: show a sticky buy bar once the main "Add to cart" scrolls out of view
   const ctaRef = useRef<HTMLDivElement>(null);
@@ -60,14 +62,12 @@ const ProductContent = ({ product, relatedProducts, brand }: ProductContentProps
   };
 
   const perks = [
-    {
-      icon: Truck,
-      title: storeConfig.freeShippingThreshold > 0 ? "Free delivery" : "Delivery",
-      text:
-        storeConfig.freeShippingThreshold > 0
-          ? `On orders over ${formatPrice(storeConfig.freeShippingThreshold)}`
-          : "Fast, tracked delivery",
-    },
+    // Delivery charge comes from Admin → Settings → Delivery
+    deliveryCharge <= 0
+      ? { icon: Truck, title: "Free delivery", text: "On every order" }
+      : freeDeliveryOver > 0
+        ? { icon: Truck, title: "Free delivery", text: `On orders over ${formatPrice(freeDeliveryOver)}` }
+        : { icon: Truck, title: "Delivery", text: `${formatPrice(deliveryCharge)} per order, tracked to your door` },
     { icon: Wallet, title: "Cash on delivery", text: "Pay when it arrives" },
     { icon: RotateCcw, title: "Easy returns", text: "Within 7 days of delivery" },
     { icon: ShieldCheck, title: "Secure checkout", text: "Encrypted payments" },
@@ -125,7 +125,7 @@ const ProductContent = ({ product, relatedProducts, brand }: ProductContentProps
           </div>
 
           <div className="mt-6 rounded-3xl bg-sand p-5 sm:p-6">
-            <PriceView price={product?.price} discount={product?.discount} className="font-display text-3xl font-normal" />
+            <PriceView price={product?.price} discount={product?.discount} size="lg" />
             <p
               className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
                 stock === 0 ? "bg-dark-red/10 text-dark-red" : stock <= 5 ? "bg-marigold/20 text-ink" : "bg-sage/15 text-sage"

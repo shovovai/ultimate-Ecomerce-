@@ -82,7 +82,7 @@ const ProductCard = memo(({ product }: { product: Product }) => {
           </h3>
         </Link>
 
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-light-color">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-light-color">
           <Star
             className={`h-3.5 w-3.5 ${rating ? "fill-marigold text-marigold" : "text-light-text"}`}
           />
@@ -95,14 +95,14 @@ const ProductCard = memo(({ product }: { product: Product }) => {
             <span>No reviews yet</span>
           )}
           {lowStock && (
-            <span className="ml-auto font-semibold text-clay">
+            <span className="ml-auto whitespace-nowrap font-semibold text-clay">
               Only {product?.stock} left
             </span>
           )}
         </div>
 
         <div className="mt-2">
-          <PriceView price={product?.price} discount={product?.discount} className="text-base" />
+          <PriceView price={product?.price} discount={product?.discount} size="md" showBadge={false} />
         </div>
       </div>
     </article>

@@ -197,9 +197,6 @@ export default function AdminPaymentGateways() {
         onToggle={(v) => set("cod", "enabled", v)}
       >
         <Field label="Name at checkout">{text("cod", "label")}</Field>
-        <Field label="COD fee" hint="Extra charge added to the order (0 = none)">
-          {text("cod", "fee", { type: "number", min: 0, step: "0.01" })}
-        </Field>
         <Field label="Maximum order amount" hint="Hide COD above this total (0 = no limit)">
           {text("cod", "maxOrderAmount", { type: "number", min: 0, step: "1" })}
         </Field>

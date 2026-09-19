@@ -132,7 +132,7 @@ export function OrderCheckoutContent({
               <span>-{formatPrice(order.amountDiscount)}</span>
             </div>
           )}
-          <div className="flex justify-between text-light-color"><span>Shipping</span><span>{order.shipping ? formatPrice(order.shipping) : "Free"}</span></div>
+          <div className="flex justify-between text-light-color"><span>Delivery charge</span><span>{order.shipping ? formatPrice(order.shipping) : "Free"}</span></div>
           {!!order.tax && <div className="flex justify-between text-light-color"><span>Tax</span><span>{formatPrice(order.tax)}</span></div>}
           <div className="flex items-end justify-between border-t border-dashed border-border pt-3">
             <span className="font-semibold">Total</span>

@@ -167,7 +167,7 @@ export const orderType = defineType({
     }),
     defineField({
       name: "paymentFee",
-      title: "Payment Fee (e.g. COD charge)",
+      title: "Payment Fee (legacy COD charge — no longer added to new orders)",
       type: "number",
       readOnly: true,
     }),

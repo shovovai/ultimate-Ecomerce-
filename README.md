@@ -62,7 +62,7 @@ This document explains what the system does, where data is stored, how it is set
 | **Notifications** | Send in-app notifications to users and view sent history |
 | **Employees** | Assign staff roles, suspend or activate staff, view performance |
 | **SEO & Branding** | Upload store logo, favicon/app icon and social share image; home title, title template, meta description, keywords (with Google preview); social profile links; Google/Bing/Facebook verification; hide-from-search switch; Google Analytics 4, Tag Manager, Meta Pixel and AdSense IDs |
-| **Settings** | Admin panel title, logo and accent color; store name, support contact, currency symbol; storefront announcement bar |
+| **Settings** | Admin panel title, logo and accent color; store name, support contact, currency symbol; **delivery charge and free-delivery amount**; storefront announcement bar |
 
 ### Employee portal (`/employee`)
 
@@ -247,8 +247,8 @@ All settings live in `.env` (copy it from `.env.example`). **Never commit `.env`
 | `NEXT_PUBLIC_COMPANY_DESCRIPTION`, `NEXT_PUBLIC_COPYRIGHT_TEXT` | no | SEO description and footer copyright |
 | `NEXT_PUBLIC_CURRENCY` | no | Store currency code: `USD` (default), `BDT`, `EUR`, `INR`… |
 | `NEXT_PUBLIC_LOCALE` | no | Number format, e.g. `en-US`, `en-BD`, `bn-BD` |
-| `NEXT_PUBLIC_FREE_SHIPPING_THRESHOLD` | no | Subtotal for free delivery (default `100`, `0` = always free) |
-| `NEXT_PUBLIC_SHIPPING_FEE` | no | Delivery fee below the threshold (default `10`) |
+| `NEXT_PUBLIC_FREE_SHIPPING_THRESHOLD` | no | Starting value for "free delivery over" (default `100`). Change it later in Admin → Settings → Delivery |
+| `NEXT_PUBLIC_SHIPPING_FEE` | no | Starting delivery charge (default `10`). Change it later in Admin → Settings → Delivery |
 | `NEXT_PUBLIC_TAX_RATE` | no | Tax as a decimal: `0.05` = 5% (default `0`) |
 | `NEXT_PUBLIC_BUSINESS_DISCOUNT_RATE` | no | Extra discount for business accounts (default `0.02` = 2%) |
 | `NEXT_PUBLIC_PRICE_BUCKETS` | no | Shop price filter steps, e.g. `500,1000,5000,10000` for BDT |
@@ -355,7 +355,7 @@ Create a Firebase project, add a Web app, and copy its config into the `NEXT_PUB
   3. Click **Send to all subscribers**. Every email includes an unsubscribe link (`/newsletter/unsubscribe`).
   4. The subscriber table below supports search, filters, delete and CSV export.
 - **Employees** — pick a registered user and assign a role. Suspend or activate staff at any time.
-- **Settings** — panel title, logo URL, accent color, store name, currency symbol, support contact, and the storefront announcement bar. Changes apply immediately.
+- **Settings** — panel title, logo URL, accent color, store name, currency symbol, support contact, **delivery charge** (added to every order, whatever the payment method) with an optional free-delivery amount, and the storefront announcement bar. Changes apply immediately.
 
 ---
 

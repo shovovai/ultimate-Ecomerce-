@@ -1,6 +1,7 @@
 import "server-only";
 import { backendClient } from "@/sanity/lib/backendClient";
 import { brand } from "@/config/brand";
+import { DEFAULT_DELIVERY } from "@/lib/storeConfig";
 
 export const STORE_SETTINGS_ID = "storeSettings";
 
@@ -15,6 +16,9 @@ export interface StoreSettings {
   announcementEnabled: boolean;
   announcementText: string;
   announcementLink: string;
+  // Delivery (applies to every order, any payment method)
+  deliveryCharge: number;
+  freeDeliveryOver: number;
   // Branding & icons
   siteLogoUrl: string;
   faviconUrl: string;
@@ -57,6 +61,8 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   announcementEnabled: false,
   announcementText: "",
   announcementLink: "",
+  deliveryCharge: DEFAULT_DELIVERY.deliveryCharge,
+  freeDeliveryOver: DEFAULT_DELIVERY.freeDeliveryOver,
   siteLogoUrl: "",
   faviconUrl: "",
   ogImageUrl: "",

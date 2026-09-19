@@ -1,49 +1,48 @@
-import { twMerge } from "tailwind-merge";
 import PriceFormatter from "./PriceFormatter";
 import { cn } from "@/lib/utils";
+
+const SIZES = {
+  sm: { now: "text-sm", was: "text-xs" },
+  md: { now: "text-base", was: "text-xs sm:text-sm" },
+  lg: { now: "font-display text-3xl font-normal", was: "text-base" },
+} as const;
 
 interface Props {
   price: number | undefined;
   discount: number | undefined;
+  /** sm: lists, md: product cards, lg: product page */
+  size?: keyof typeof SIZES;
+  /** Hide the "-10%" pill where the discount is already shown (e.g. card image badge) */
+  showBadge?: boolean;
+  /** Extra classes for the current price only */
   className?: string;
 }
 
-const PriceView = ({ price, discount: rawDiscount, className }: Props) => {
+const PriceView = ({ price, discount: rawDiscount, size = "md", showBadge = true, className }: Props) => {
   // Guard against bad data (e.g. 600 entered instead of 6)
-  const discount = rawDiscount && rawDiscount > 0 && rawDiscount < 100 ? rawDiscount : undefined;
-  // Current/payable price is the actual price (discounted price)
+  const discount = rawDiscount && rawDiscount > 0 && rawDiscount < 100 ? rawDiscount : 0;
+  // `price` is what the customer pays; the struck-through price is price + discount
   const currentPrice = price || 0;
-
-  // Gross price = current price + discount amount
-  const discountAmount =
-    discount && currentPrice ? (discount * currentPrice) / 100 : 0;
-  const grossPrice = currentPrice + discountAmount;
+  const grossPrice = discount ? currentPrice + (discount * currentPrice) / 100 : 0;
 
   return (
-    <div className="flex items-center justify-between gap-5">
-      <div className="flex items-center gap-2">
-        {/* Current/Payable Price (discounted price) */}
+    // Wraps onto a second line on narrow screens instead of spilling into the next card
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <PriceFormatter
+        amount={currentPrice}
+        className={cn("whitespace-nowrap font-bold text-ink", SIZES[size].now, className)}
+      />
+      {grossPrice > 0 && (
         <PriceFormatter
-          amount={currentPrice}
-          className={cn("text-ink font-bold", className)}
+          amount={grossPrice}
+          className={cn("whitespace-nowrap font-normal text-light-text line-through", SIZES[size].was)}
         />
-
-        {/* Gross Price (original price before discount) - only show if there's a discount */}
-        {discount && discountAmount > 0 && (
-          <div className="flex items-center gap-1">
-            <PriceFormatter
-              amount={grossPrice}
-              className={twMerge(
-                "line-through text-xs font-normal text-light-text",
-                className
-              )}
-            />
-            <span className="rounded-full bg-clay/10 px-1.5 py-0.5 text-xs font-semibold text-clay">
-              -{discount}%
-            </span>
-          </div>
-        )}
-      </div>
+      )}
+      {grossPrice > 0 && showBadge && (
+        <span className="shrink-0 self-center whitespace-nowrap rounded-full bg-clay/10 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-clay">
+          -{discount}%
+        </span>
+      )}
     </div>
   );
 };

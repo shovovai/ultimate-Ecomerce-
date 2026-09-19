@@ -22,7 +22,7 @@ export interface ManualAccount {
 }
 
 export interface PaymentConfig {
-  cod: { enabled: boolean; label: string; instructions: string; fee: number; maxOrderAmount: number };
+  cod: { enabled: boolean; label: string; instructions: string; maxOrderAmount: number };
   bkash: {
     enabled: boolean;
     label: string;
@@ -62,7 +62,6 @@ export function defaultPaymentConfig(): PaymentConfig {
       enabled: true,
       label: "Cash on delivery",
       instructions: "Pay in cash when your order arrives.",
-      fee: 0,
       maxOrderAmount: 0,
     },
     bkash: {
@@ -175,7 +174,6 @@ export async function savePaymentConfig(input: Record<string, Record<string, unk
     enabled: bool(cod.enabled, current.cod.enabled),
     label: text(cod.label, 60) || current.cod.label,
     instructions: text(cod.instructions, 500),
-    fee: money(cod.fee),
     maxOrderAmount: money(cod.maxOrderAmount),
   };
 
@@ -285,7 +283,6 @@ export interface PaymentOption {
   accountNumber?: string;
   accountType?: string;
   instructions?: string;
-  fee?: number;
 }
 
 export function paymentOptionsFrom(config: PaymentConfig, orderTotal?: number): PaymentOption[] {
@@ -299,7 +296,6 @@ export function paymentOptionsFrom(config: PaymentConfig, orderTotal?: number): 
       label: config.cod.label,
       description: config.cod.instructions,
       kind: "offline",
-      fee: config.cod.fee || 0,
     });
   }
   if (config.bkash.enabled && config.bkash.appKey)

@@ -104,13 +104,12 @@ export const POST = async (request: NextRequest) => {
       clerkUserId: userId,
       email: userEmail,
       strictCoupon: Boolean(body.couponCode),
-      paymentMethod,
     });
 
     // COD may be limited to orders under a maximum amount
     if (paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY) {
       const { cod } = await getPaymentConfig();
-      if (cod.maxOrderAmount && pricing.total - pricing.paymentFee > cod.maxOrderAmount) {
+      if (cod.maxOrderAmount && pricing.total > cod.maxOrderAmount) {
         return NextResponse.json(
           { error: "Cash on delivery isn't available for this order amount. Please choose another payment method." },
           { status: 400 }
@@ -158,7 +157,6 @@ export const POST = async (request: NextRequest) => {
       couponDiscount: pricing.coupon?.amount || 0,
       shipping: pricing.shipping,
       tax: pricing.tax,
-      paymentFee: pricing.paymentFee,
       totalPrice: pricing.total,
       currency: pricing.currency,
       address: {

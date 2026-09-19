@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Megaphone, Palette, Save, Store } from "lucide-react";
+import { Loader2, Megaphone, Palette, Save, Store, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ interface Settings {
   announcementEnabled: boolean;
   announcementText: string;
   announcementLink: string;
+  deliveryCharge: number;
+  freeDeliveryOver: number;
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -87,6 +89,17 @@ export default function AdminSettings() {
     id: key,
     value: String(settings[key] ?? ""),
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => set(key, e.target.value as never),
+  });
+
+  const money = (key: "deliveryCharge" | "freeDeliveryOver") => ({
+    id: key,
+    type: "number",
+    min: 0,
+    step: "0.01",
+    inputMode: "decimal" as const,
+    value: String(settings[key] ?? 0),
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+      set(key, e.target.value === "" ? 0 : Math.max(0, Number(e.target.value) || 0)),
   });
 
   const save = async (e: FormEvent) => {
@@ -174,6 +187,21 @@ export default function AdminSettings() {
           </Field>
           <Field id="supportPhone" label="Support phone">
             <Input {...text("supportPhone")} />
+          </Field>
+        </div>
+      </Section>
+
+      <Section
+        icon={Truck}
+        title="Delivery"
+        description="Added to every order, whatever payment method the customer picks."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="deliveryCharge" label="Delivery charge" hint="0 = free delivery on every order">
+            <Input {...money("deliveryCharge")} />
+          </Field>
+          <Field id="freeDeliveryOver" label="Free delivery on orders over" hint="0 = always charge delivery">
+            <Input {...money("freeDeliveryOver")} />
           </Field>
         </div>
       </Section>

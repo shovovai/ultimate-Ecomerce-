@@ -86,7 +86,6 @@ export default function PaymentOptionPicker({ options, selectedId, onSelect, amo
               <span className="flex-1">
                 <span className="block font-semibold text-ink">
                   {o.label}
-                  {!!o.fee && <span className="ml-2 text-xs font-medium text-light-color">+{formatPrice(o.fee)} fee</span>}
                 </span>
                 <span className="block text-sm text-light-color">{o.description}</span>
               </span>

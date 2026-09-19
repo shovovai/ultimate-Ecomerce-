@@ -22,16 +22,12 @@ export async function POST(request: NextRequest) {
 
     const { userId } = await auth();
     const user = userId ? await currentUser() : null;
-    const optionId = typeof body.paymentOptionId === "string" ? body.paymentOptionId : "";
-    const paymentMethod = optionId.startsWith("manual:") ? "manual" : optionId;
-
     const pricing = await priceCart(items, {
       couponCode: body.couponCode,
       clerkUserId: userId,
       email: user?.primaryEmailAddress?.emailAddress,
-      paymentMethod,
     });
-    const paymentOptions = await getCheckoutPaymentOptions(pricing.total - pricing.paymentFee);
+    const paymentOptions = await getCheckoutPaymentOptions(pricing.total);
 
     return NextResponse.json({
       success: true,
@@ -49,8 +45,8 @@ export async function POST(request: NextRequest) {
         couponError: pricing.couponError,
         discountTotal: pricing.discountTotal,
         shipping: pricing.shipping,
+        freeDeliveryLeft: pricing.freeDeliveryLeft,
         tax: pricing.tax,
-        paymentFee: pricing.paymentFee,
         total: pricing.total,
         currency: pricing.currency,
       },

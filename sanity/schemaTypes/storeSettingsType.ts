@@ -53,6 +53,22 @@ export const storeSettingsType = defineType({
       group: "store",
     }),
     defineField({
+      name: "deliveryCharge",
+      title: "Delivery Charge",
+      description: "Added to every order, whatever the payment method. 0 = free delivery.",
+      type: "number",
+      group: "store",
+      validation: (Rule) => Rule.min(0),
+    }),
+    defineField({
+      name: "freeDeliveryOver",
+      title: "Free Delivery Over",
+      description: "Orders at or above this amount ship free. 0 = never free.",
+      type: "number",
+      group: "store",
+      validation: (Rule) => Rule.min(0),
+    }),
+    defineField({
       name: "currencySymbol",
       title: "Currency Symbol (reports & exports)",
       type: "string",

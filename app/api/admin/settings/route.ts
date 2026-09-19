@@ -40,7 +40,18 @@ export async function PUT(request: NextRequest) {
           { status: 400 }
         );
       }
-      update[key] = typeof value === "string" ? value.trim() : value;
+      if (typeof value === "number" && !(Number.isFinite(value) && value >= 0 && value <= 1_000_000_000)) {
+        return NextResponse.json(
+          { success: false, error: `${key} must be 0 or more` },
+          { status: 400 }
+        );
+      }
+      update[key] =
+        typeof value === "string"
+          ? value.trim()
+          : typeof value === "number"
+            ? Math.round(value * 100) / 100
+            : value;
     }
 
     // Format checks for values that end up in meta / script tags

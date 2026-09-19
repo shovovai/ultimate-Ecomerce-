@@ -3,6 +3,7 @@
 import { createContext, ReactNode, useContext } from "react";
 import { brand } from "@/config/brand";
 import type { PublicSiteSettings } from "@/lib/siteSeo";
+import { DEFAULT_DELIVERY } from "@/lib/storeConfig";
 
 const fallback: PublicSiteSettings = {
   storeName: brand.name,
@@ -10,6 +11,7 @@ const fallback: PublicSiteSettings = {
   themeColor: "#c2542d",
   supportPhone: "",
   supportEmail: brand.emails.support,
+  ...DEFAULT_DELIVERY,
   social: {
     facebook: brand.social.facebook,
     instagram: brand.social.instagram,

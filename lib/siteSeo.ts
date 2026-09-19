@@ -28,6 +28,8 @@ export interface PublicSiteSettings {
   themeColor: string;
   supportPhone: string;
   supportEmail: string;
+  deliveryCharge: number;
+  freeDeliveryOver: number;
   social: ReturnType<typeof socialProfiles>;
 }
 
@@ -38,6 +40,8 @@ export function toPublicSettings(s: StoreSettings): PublicSiteSettings {
     themeColor: s.themeColor,
     supportPhone: s.supportPhone,
     supportEmail: s.supportEmail,
+    deliveryCharge: s.deliveryCharge,
+    freeDeliveryOver: s.freeDeliveryOver,
     social: socialProfiles(s),
   };
 }

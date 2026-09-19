@@ -28,8 +28,8 @@ const SignUpPage = () => {
     },
     {
       icon: Truck,
-      title: "Free Shipping",
-      description: "Enjoy free shipping on orders over $50",
+      title: "Fast Delivery",
+      description: "Tracked delivery right to your door",
     },
     {
       icon: CreditCard,

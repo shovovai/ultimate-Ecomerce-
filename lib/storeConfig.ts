@@ -42,10 +42,24 @@ export function formatPrice(amount: number | string | null | undefined): string 
 /** Rounds to 2 decimals to avoid floating point drift in totals */
 export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export function calcShipping(subtotal: number): number {
-  if (subtotal <= 0) return 0;
-  if (storeConfig.freeShippingThreshold <= 0) return 0;
-  return subtotal >= storeConfig.freeShippingThreshold ? 0 : storeConfig.shippingFee;
+export interface DeliveryRule {
+  /** Flat delivery charge per order (0 = always free) */
+  deliveryCharge: number;
+  /** Orders at or above this amount ship free (0 = never free) */
+  freeDeliveryOver: number;
+}
+
+/** Defaults from .env, used until the admin sets them in Admin → Settings → Delivery */
+export const DEFAULT_DELIVERY: DeliveryRule = {
+  deliveryCharge: storeConfig.freeShippingThreshold <= 0 ? 0 : Math.max(storeConfig.shippingFee, 0),
+  freeDeliveryOver: Math.max(storeConfig.freeShippingThreshold, 0),
+};
+
+/** Delivery charge for an order — the same for every payment method */
+export function calcDelivery(amount: number, rule: DeliveryRule): number {
+  if (amount <= 0 || rule.deliveryCharge <= 0) return 0;
+  if (rule.freeDeliveryOver > 0 && amount >= rule.freeDeliveryOver) return 0;
+  return round2(rule.deliveryCharge);
 }
 
 export function calcTax(taxableAmount: number): number {

@@ -375,7 +375,7 @@ const ContactPage = () => {
             {[
               {
                 q: "What are your shipping policies?",
-                a: "We offer free shipping on orders over $50 within the continental US. International shipping is available with additional charges.",
+                a: "A delivery charge is added at checkout, and you'll see the exact amount before you place your order. Orders above our free-delivery amount ship free.",
               },
               {
                 q: "How can I track my order?",

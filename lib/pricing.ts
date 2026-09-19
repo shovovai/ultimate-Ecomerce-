@@ -1,7 +1,7 @@
 import "server-only";
 import { backendClient } from "@/sanity/lib/backendClient";
-import { calcShipping, calcTax, round2, storeConfig } from "@/lib/storeConfig";
-import { getPaymentConfig } from "@/lib/paymentConfig";
+import { calcDelivery, calcTax, round2, storeConfig } from "@/lib/storeConfig";
+import { getStoreSettings } from "@/lib/storeSettings";
 
 // Single source of truth for order totals. Every price comes from Sanity —
 // never from the browser — so totals cannot be tampered with.
@@ -37,10 +37,11 @@ export interface PricingResult {
   coupon: AppliedCoupon | null;
   couponError?: string;
   discountTotal: number;
+  /** Delivery charge (same for every payment method) */
   shipping: number;
+  /** How much more to spend for free delivery (0 = already free / not offered) */
+  freeDeliveryLeft: number;
   tax: number;
-  /** Extra charge for the chosen payment method (e.g. COD fee) */
-  paymentFee: number;
   total: number;
   currency: string;
 }
@@ -145,8 +146,6 @@ export async function priceCart(
     email?: string | null;
     /** When true an invalid coupon throws instead of being reported */
     strictCoupon?: boolean;
-    /** Chosen payment method — adds its fee (COD charge) to the total */
-    paymentMethod?: string;
   } = {}
 ): Promise<PricingResult> {
   if (items.length === 0) throw new PricingError("Your cart is empty");
@@ -211,16 +210,14 @@ export async function priceCart(
 
   const discountTotal = round2(businessDiscount + (coupon?.amount || 0));
   const discounted = round2(Math.max(0, subtotal - discountTotal));
-  // Free-shipping threshold is judged on the pre-coupon amount
-  const shipping = calcShipping(afterBusiness);
+  // Delivery charge from Admin → Settings, the same for every payment method.
+  // The free-delivery amount is judged on the pre-coupon amount.
+  const delivery = await getStoreSettings();
+  const shipping = calcDelivery(afterBusiness, delivery);
+  const freeDeliveryLeft =
+    shipping > 0 && delivery.freeDeliveryOver > 0 ? round2(delivery.freeDeliveryOver - afterBusiness) : 0;
   const tax = calcTax(discounted);
-
-  let paymentFee = 0;
-  if (options.paymentMethod === "cash_on_delivery") {
-    const { cod } = await getPaymentConfig();
-    paymentFee = round2(cod.fee || 0);
-  }
-  const total = round2(discounted + shipping + tax + paymentFee);
+  const total = round2(discounted + shipping + tax);
 
   return {
     lines,
@@ -230,8 +227,8 @@ export async function priceCart(
     couponError,
     discountTotal,
     shipping,
+    freeDeliveryLeft,
     tax,
-    paymentFee,
     total,
     currency: storeConfig.currency,
   };
