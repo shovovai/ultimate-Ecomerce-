@@ -19,7 +19,6 @@ const ProductCard = memo(({ product }: { product: Product }) => {
       <div className="relative overflow-hidden rounded-2xl bg-sand">
         {product?.images?.[0] && (
           <Link href={href} aria-label={product?.name}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image(product.images[0]).size(700, 700).url()}
               alt={product?.name || "Product image"}

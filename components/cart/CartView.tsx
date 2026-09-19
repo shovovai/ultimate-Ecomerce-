@@ -70,7 +70,6 @@ export default function CartView() {
                   className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-sand sm:h-28 sm:w-28"
                 >
                   {product.images?.[0] && (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={image(product.images[0]).size(300, 300).url()}
                       alt={product.name || "Product"}

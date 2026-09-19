@@ -8,10 +8,12 @@ import { ArrowLeft, Gift, ShoppingBag, Truck, CreditCard } from "lucide-react";
 import { contactConfig } from "@/config/contact";
 import Container from "@/components/Container";
 import { useSearchParams } from "next/navigation";
+import { safeRedirectPath } from "@/lib/safeRedirect";
 
 const SignUpPage = () => {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo");
+  // Same-site paths only (blocks ?redirectTo=https://evil.example)
+  const redirectTo = safeRedirectPath(searchParams.get("redirectTo"), "") || null;
 
   const benefits = [
     {
@@ -162,18 +164,24 @@ const SignUpPage = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
+            className="flex-1 flex items-center justify-center px-0 sm:px-6 lg:px-8 py-8 lg:py-12"
           >
             <div className="w-full max-w-md">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100/50 p-8"
+                className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100/50 p-2 sm:p-8"
               >
                 {/* Clerk Sign Up Component */}
                 <div className="clerk-sign-up">
                   <SignUp
+                    appearance={{
+                      elements: {
+                        rootBox: { width: "100%" },
+                        cardBox: { width: "100%", maxWidth: "100%" },
+                      },
+                    }}
                     signInUrl={`/sign-in${
                       redirectTo
                         ? `?redirectTo=${encodeURIComponent(redirectTo)}`

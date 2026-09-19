@@ -7,7 +7,7 @@ import { backendClient } from "@/sanity/lib/backendClient";
 import { addWalletCredit } from "@/lib/walletCredit";
 import { sendOrderStatusNotification } from "@/lib/notificationService";
 import { revalidatePath } from "next/cache";
-import { isAdmin } from "@/lib/adminUtils";
+import { getAdminEmail } from "@/lib/adminAuth";
 
 /**
  * Admin: Approve cancellation request and cancel order with refund
@@ -22,13 +22,11 @@ export async function approveCancellationRequest(
       return { success: false, message: "Unauthorized" };
     }
 
-    // Verify admin status - check both database field and environment variable
-    const adminUser = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId][0]{ email, isAdmin }`,
-      { clerkUserId }
-    );
+    // Admin rights come from Clerk (verified email), never from the Sanity user document
+    const adminEmail = await getAdminEmail();
+    const adminUser = { email: adminEmail ?? undefined };
 
-    if (!isAdmin(adminUser)) {
+    if (!adminEmail) {
       return {
         success: false,
         message: "Admin access required to approve cancellation requests",
@@ -155,13 +153,11 @@ export async function rejectCancellationRequest(
       return { success: false, message: "Unauthorized" };
     }
 
-    // Verify admin status - check both database field and environment variable
-    const adminUser = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId][0]{ email, isAdmin }`,
-      { clerkUserId }
-    );
+    // Admin rights come from Clerk (verified email), never from the Sanity user document
+    const adminEmail = await getAdminEmail();
+    const adminUser = { email: adminEmail ?? undefined };
 
-    if (!isAdmin(adminUser)) {
+    if (!adminEmail) {
       return {
         success: false,
         message: "Admin access required to reject cancellation requests",
@@ -249,13 +245,11 @@ export async function cancelOrder(
       return { success: false, message: "Unauthorized" };
     }
 
-    // Verify admin status - check both database field and environment variable
-    const adminUser = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId][0]{ email, isAdmin }`,
-      { clerkUserId }
-    );
+    // Admin rights come from Clerk (verified email), never from the Sanity user document
+    const adminEmail = await getAdminEmail();
+    const adminUser = { email: adminEmail ?? undefined };
 
-    if (!isAdmin(adminUser)) {
+    if (!adminEmail) {
       return {
         success: false,
         message: "Admin access required to cancel orders",

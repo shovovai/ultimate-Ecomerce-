@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeClient } from "@/sanity/lib/client";
+import { rateLimit } from "@/lib/rateLimit";
 
 // GET - Get reviews for a specific product
 export async function GET(request: NextRequest) {
@@ -92,6 +93,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Submit a new review
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, "review", { limit: 5, windowMs: 10 * 60_000 });
+  if (limited) return limited;
+
   try {
     const { userId } = await auth();
 
@@ -102,18 +106,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { productId, rating, title, content } = body;
+    const body = await request.json().catch(() => ({}));
+    const productId = typeof body.productId === "string" ? body.productId : "";
+    const rating = Number(body.rating);
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    const content = typeof body.content === "string" ? body.content.trim() : "";
 
     // Validate input
-    if (!productId || !rating || !title || !content) {
+    if (!productId || !title || !content) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    if (rating < 1 || rating > 5) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return NextResponse.json(
         { error: "Rating must be between 1 and 5" },
         { status: 400 }
@@ -146,6 +153,15 @@ export async function POST(request: NextRequest) {
 
     if (!sanityUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Reviews may only point at real products
+    const productExists = await writeClient.fetch<boolean>(
+      `count(*[_type == "product" && _id == $productId]) > 0`,
+      { productId }
+    );
+    if (!productExists) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     // Check if user has already reviewed this product
@@ -215,8 +231,8 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { reviewId } = body;
+    const body = await request.json().catch(() => ({}));
+    const reviewId = typeof body.reviewId === "string" ? body.reviewId : "";
 
     if (!reviewId) {
       return NextResponse.json(
@@ -239,7 +255,7 @@ export async function PATCH(request: NextRequest) {
 
     // Get the review
     const review = await writeClient.fetch(
-      `*[_type == "review" && _id == $reviewId][0]{
+      `*[_type == "review" && _id == $reviewId && status == "approved"][0]{
         _id,
         helpful,
         "helpfulByIds": helpfulBy[]._ref

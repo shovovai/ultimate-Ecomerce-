@@ -5,6 +5,7 @@ import { resolvePaymentOption } from "@/lib/paymentMethods";
 import { validateManualSubmission } from "@/lib/manualPayment";
 import { notifyAdminsOfManualPayment } from "@/lib/orderPayment";
 import { PAYMENT_STATUSES } from "@/lib/orderStatus";
+import { rateLimit } from "@/lib/rateLimit";
 
 // POST /api/orders/:orderId/manual-payment  { accountId, senderNumber, transactionId }
 // Customer submits (or re-submits after rejection) a send-money payment for review.
@@ -12,6 +13,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
+  const limited = rateLimit(request, "manual-pay", { limit: 10, windowMs: 10 * 60_000 });
+  if (limited) return limited;
+
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -11,6 +11,7 @@ import DynamicBreadcrumb from "@/components/DynamicBreadcrumb";
 import ProductReviews from "@/components/ProductReviews";
 import RelatedProducts from "./RelatedProducts";
 import { trackProductView } from "@/lib/analytics";
+import { recordRecentlyViewed } from "@/lib/recentlyViewed";
 import { formatPrice, storeConfig } from "@/lib/storeConfig";
 import { BRAND_QUERYResult, Product } from "@/sanity.types";
 
@@ -40,6 +41,7 @@ const ProductContent = ({ product, relatedProducts, brand }: ProductContentProps
   useEffect(() => {
     if (product) {
       trackProductView({ productId: product._id, name: product.name || "Unknown" });
+      recordRecentlyViewed(product);
     }
   }, [product]);
 

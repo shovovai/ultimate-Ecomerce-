@@ -14,6 +14,7 @@ import {
   generateProductSchema,
   generateBreadcrumbSchema,
 } from "@/lib/seo";
+import { jsonLd } from "@/lib/jsonLd";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -93,13 +94,13 @@ const ProductPageContent = async ({ slug }: { slug: string }) => {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productSchema),
+          __html: jsonLd(productSchema),
         }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbSchema),
+          __html: jsonLd(breadcrumbSchema),
         }}
       />
 

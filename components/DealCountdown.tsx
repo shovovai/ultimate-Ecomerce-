@@ -1,65 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
 
+const TimeUnit = ({ value, label }: { value: string; label: string }) => (
+  <div className="flex min-w-14 flex-col items-center rounded-xl bg-cream p-2 sm:p-3">
+    <span className="font-display text-lg font-semibold tabular-nums text-ink sm:text-2xl md:text-3xl">
+      {value}
+    </span>
+    <span className="text-xs font-medium text-gray-600 sm:text-sm">{label}</span>
+  </div>
+);
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** Real countdown to local midnight, when today's deals roll over */
 const DealCountdown = () => {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 2,
-    hours: 14,
-    minutes: 35,
-    seconds: 42,
-  });
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        } else if (prev.days > 0) {
-          return {
-            ...prev,
-            days: prev.days - 1,
-            hours: 23,
-            minutes: 59,
-            seconds: 59,
-          };
-        }
-        return prev;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
+    const tick = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      setSecondsLeft(Math.max(0, Math.floor((midnight.getTime() - now.getTime()) / 1000)));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
   }, []);
 
-  const TimeUnit = ({ value, label }: { value: number; label: string }) => (
-    <div className="flex flex-col items-center bg-cream rounded-xl p-2 sm:p-3 min-w-14">
-      <span className="text-lg sm:text-2xl md:text-3xl font-display font-semibold text-ink">
-        {value.toString().padStart(2, "0")}
-      </span>
-      <span className="text-xs sm:text-sm text-gray-600 font-medium">
-        {label}
-      </span>
-    </div>
-  );
+  const s = secondsLeft;
+  const hours = s === null ? "--" : pad(Math.floor(s / 3600));
+  const minutes = s === null ? "--" : pad(Math.floor((s % 3600) / 60));
+  const seconds = s === null ? "--" : pad(s % 60);
 
   return (
     <div className="flex items-center gap-2 sm:gap-4">
-      <div className="flex items-center gap-1 sm:gap-2 text-marigold">
-        <Timer className="w-4 h-4 sm:w-5 sm:h-5" />
-        <span className="text-sm sm:text-base font-semibold">
-          Deal Ends In:
-        </span>
+      <div className="flex items-center gap-1 text-marigold sm:gap-2">
+        <Timer className="h-4 w-4 sm:h-5 sm:w-5" />
+        <span className="text-sm font-semibold sm:text-base">Today&apos;s deals end in:</span>
       </div>
-      <div className="grid grid-cols-4 gap-1 sm:gap-2">
-        <TimeUnit value={timeLeft.days} label="Days" />
-        <TimeUnit value={timeLeft.hours} label="Hours" />
-        <TimeUnit value={timeLeft.minutes} label="Mins" />
-        <TimeUnit value={timeLeft.seconds} label="Secs" />
+      <div className="grid grid-cols-3 gap-1 sm:gap-2" role="timer">
+        <TimeUnit value={hours} label="Hours" />
+        <TimeUnit value={minutes} label="Mins" />
+        <TimeUnit value={seconds} label="Secs" />
       </div>
     </div>
   );

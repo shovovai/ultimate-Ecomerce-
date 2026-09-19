@@ -36,20 +36,25 @@ export async function GET(req: NextRequest) {
 
     // Get query parameters
     const { searchParams } = new URL(req.url);
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10") || 10, 1), 200);
+    const offset = Math.max(parseInt(searchParams.get("offset") || "0") || 0, 0);
     const status = searchParams.get("status") || "";
     const paymentMethod = searchParams.get("paymentMethod") || "";
-    const sortBy = searchParams.get("sortBy") || "orderDate";
-    const sortOrder = searchParams.get("sortOrder") || "desc";
+    // Values go in as GROQ params; sort field/direction are whitelisted
+    const SORTABLE = ["orderDate", "_createdAt", "totalPrice", "status", "orderNumber"];
+    const sortBy = SORTABLE.includes(searchParams.get("sortBy") || "") ? searchParams.get("sortBy")! : "orderDate";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
 
     // Build filter conditions
     const filterConditions = [];
+    const queryParams: Record<string, string> = {};
     if (status) {
-      filterConditions.push(`status == "${status}"`);
+      filterConditions.push(`status == $status`);
+      queryParams.status = status;
     }
     if (paymentMethod) {
-      filterConditions.push(`paymentMethod == "${paymentMethod}"`);
+      filterConditions.push(`paymentMethod == $paymentMethod`);
+      queryParams.paymentMethod = paymentMethod;
     }
 
     // Build GROQ query
@@ -102,10 +107,10 @@ export async function GET(req: NextRequest) {
 
     // Execute queries with perspective 'published' to avoid draft content
     const [orders, totalCount] = await Promise.all([
-      client.fetch(query, {}, { cache: "no-store", next: { revalidate: 0 } }),
+      client.fetch(query, queryParams, { cache: "no-store", next: { revalidate: 0 } }),
       client.fetch(
         countQuery,
-        {},
+        queryParams,
         { cache: "no-store", next: { revalidate: 0 } }
       ),
     ]);

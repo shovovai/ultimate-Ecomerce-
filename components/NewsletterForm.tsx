@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
-const NewsletterForm = ({ tone = "light" }: { tone?: "light" | "dark" }) => {
+const NewsletterForm = ({ tone = "light" }: { tone?: "light" | "dark" | "clay" }) => {
   const dark = tone === "dark";
+  const clay = tone === "clay";
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{
@@ -97,13 +98,17 @@ const NewsletterForm = ({ tone = "light" }: { tone?: "light" | "dark" }) => {
           className={`w-full flex-1 rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay disabled:cursor-not-allowed disabled:opacity-60 transition-all ${
             dark
               ? "bg-white/10 text-cream placeholder:text-cream/50 border border-white/15"
-              : "bg-white text-ink placeholder:text-light-text border border-border"
+              : clay
+                ? "bg-white text-ink placeholder:text-light-text border border-transparent focus:ring-ink"
+                : "bg-white text-ink placeholder:text-light-text border border-border"
           }`}
         />
         <button
           type="submit"
           disabled={isLoading}
-          className="shrink-0 rounded-full bg-clay px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-clay-dark disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2"
+          className={`shrink-0 rounded-full px-6 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2 ${
+            clay ? "bg-ink text-cream hover:bg-ink/85" : "bg-clay text-white hover:bg-clay-dark"
+          }`}
         >
           {isLoading ? (
             <>

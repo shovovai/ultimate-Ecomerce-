@@ -93,7 +93,6 @@ export default function AdminSettings() {
     e.preventDefault();
     setSaving(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { updatedAt, updatedBy, ...payload } = settings;
       const res = await fetch("/api/admin/settings", {
         method: "PUT",

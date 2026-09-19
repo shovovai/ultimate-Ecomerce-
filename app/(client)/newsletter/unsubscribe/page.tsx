@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 export default async function UnsubscribePage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; token?: string }>;
 }) {
-  const { email = "" } = await searchParams;
+  const { email = "", token = "" } = await searchParams;
   return (
     <Container className="py-16">
       <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -22,7 +22,7 @@ export default async function UnsubscribePage({
         <p className="mb-6 text-sm text-gray-600">
           You will stop receiving marketing emails. Order emails are not affected.
         </p>
-        <UnsubscribeForm initialEmail={email} />
+        <UnsubscribeForm initialEmail={email} token={token} />
       </div>
     </Container>
   );

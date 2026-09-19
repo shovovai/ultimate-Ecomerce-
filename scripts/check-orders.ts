@@ -1,5 +1,15 @@
 import { formatPrice } from "@/lib/storeConfig";
-import { client } from "../sanity/lib/client";
+import { createClient } from "next-sanity";
+import { apiVersion, dataset, projectId } from "../sanity/env";
+
+// Standalone client (the app's clients are server-only and can't load in a plain script)
+const client = createClient({
+  projectId,
+  dataset,
+  apiVersion,
+  useCdn: false,
+  token: process.env.SANITY_API_READ_TOKEN,
+});
 
 async function checkOrders() {
   try {

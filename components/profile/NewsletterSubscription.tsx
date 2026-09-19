@@ -19,7 +19,7 @@ export default function NewsletterSubscription() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+  const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -29,7 +29,7 @@ export default function NewsletterSubscription() {
       }
 
       try {
-        const status = await checkSubscriptionStatus(userEmail);
+        const status = await checkSubscriptionStatus();
         setIsSubscribed(status.subscribed);
       } catch (error) {
         console.error("Error checking subscription status:", error);

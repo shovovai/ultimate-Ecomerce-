@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { isAdminUserId } from "@/lib/adminAuth";
 
 const isProtectedRoute = createRouteMatcher([
   "/user(.*)",
@@ -13,46 +14,50 @@ const isProtectedRoute = createRouteMatcher([
   "/studio(.*)",
 ]);
 
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+// Admin-only areas. Each route also checks on its own; this is a second lock.
+const isAdminArea = createRouteMatcher([
+  "/admin(.*)",
+  "/studio(.*)",
+  "/api/admin(.*)",
+  "/api/analytics(.*)",
+]);
+const isAccessDenied = createRouteMatcher(["/admin/access-denied"]);
 
-// Helper function to check if user is admin
-const isUserAdmin = (userEmail: string | null | undefined): boolean => {
-  if (!userEmail) return false;
+// Short cache so admin pages don't call Clerk on every request
+const ADMIN_CACHE_MS = 60_000;
+const adminCache = new Map<string, { admin: boolean; at: number }>();
 
-  const adminEmailsEnv = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  if (!adminEmailsEnv) return false;
-
-  try {
-    const adminEmails = adminEmailsEnv
-      .replace(/[\[\]]/g, "") // Remove brackets if present
-      .split(",")
-      .map((email) => email.trim().toLowerCase())
-      .filter((email) => email.length > 0);
-
-    return adminEmails.includes(userEmail.toLowerCase());
-  } catch (error) {
-    console.error("Error parsing admin emails:", error);
-    return false;
-  }
-};
+async function cachedIsAdmin(userId: string): Promise<boolean> {
+  const hit = adminCache.get(userId);
+  if (hit && Date.now() - hit.at < ADMIN_CACHE_MS) return hit.admin;
+  const admin = await isAdminUserId(userId).catch(() => false);
+  if (adminCache.size > 500) adminCache.clear();
+  adminCache.set(userId, { admin, at: Date.now() });
+  return admin;
+}
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+  const isApi = req.nextUrl.pathname.startsWith("/api/");
+
+  if (isAdminArea(req) && !isAccessDenied(req)) {
+    const { userId } = await auth();
+    if (!userId) {
+      if (isApi) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const signIn = new URL("/sign-in", req.url);
+      signIn.searchParams.set("redirectTo", req.nextUrl.pathname);
+      return NextResponse.redirect(signIn);
+    }
+    if (!(await cachedIsAdmin(userId))) {
+      if (isApi) {
+        return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
+      }
+      return NextResponse.redirect(new URL("/admin/access-denied", req.url));
+    }
+    return;
   }
 
-  // Additional check for admin routes
-  if (isAdminRoute(req)) {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.redirect(new URL("/sign-in", req.url));
-    }
-
-    // Get user's email from Clerk
-    // Note: In middleware, we can't easily access the full user object
-    // The client-side check in the admin page component will handle the detailed verification
-    // This middleware primarily ensures authentication is required for admin routes
+  if (isProtectedRoute(req)) {
+    await auth.protect();
   }
 });
 

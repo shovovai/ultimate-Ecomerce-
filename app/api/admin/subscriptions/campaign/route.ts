@@ -4,6 +4,7 @@ import { backendClient } from "@/sanity/lib/backendClient";
 import { sendMail } from "@/lib/emailService";
 import { getStoreSettings } from "@/lib/storeSettings";
 import { brand } from "@/config/brand";
+import { unsubscribeUrl as signedUnsubscribeUrl } from "@/lib/unsubscribeToken";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
     const worker = async () => {
       while (queue.length) {
         const email = queue.shift()!;
-        const unsubscribeUrl = `${brand.url}/newsletter/unsubscribe?email=${encodeURIComponent(email)}`;
+        const unsubscribeUrl = signedUnsubscribeUrl(email);
         const result = await sendMail({
           email,
           subject: testOnly ? `[TEST] ${subject}` : subject,

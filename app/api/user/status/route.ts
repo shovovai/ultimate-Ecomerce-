@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { backendClient } from "@/sanity/lib/backendClient";
 import { writeClient } from "@/sanity/lib/client";
+import { verifiedPrimaryEmail } from "@/lib/adminAuth";
 
 export async function GET() {
   try {
@@ -15,7 +16,7 @@ export async function GET() {
     }
 
     // Check if user exists in Sanity
-    const userEmail = user.emailAddresses[0]?.emailAddress;
+    const userEmail = verifiedPrimaryEmail(user);
     const sanityUser = await backendClient.fetch(
       `*[_type == "userType" && email == $email][0]{
         _id,
@@ -63,7 +64,7 @@ export async function POST() {
       );
     }
 
-    const userEmail = user.emailAddresses[0]?.emailAddress;
+    const userEmail = verifiedPrimaryEmail(user);
     if (!userEmail) {
       return NextResponse.json(
         { error: "User email not found" },

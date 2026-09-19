@@ -1,28 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { getMyOrders } from "@/sanity/helpers";
+import { NextResponse } from "next/server";
 
-export async function GET() {
-  try {
-    const { userId } = await auth();
+// Retired endpoint: nothing in the app calls it and the old version trusted
+// client-supplied user ids/amounts. Safe to delete this file.
+const gone = () => NextResponse.json({ error: "This endpoint has been removed" }, { status: 410 });
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Get orders count
-    const orderData = await getMyOrders(userId, 1, 1);
-    const totalOrders = orderData.totalCount || 0;
-
-    return NextResponse.json({
-      success: true,
-      totalOrders,
-    });
-  } catch (error) {
-    console.error("Error fetching orders count:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch orders count" },
-      { status: 500 }
-    );
-  }
-}
+export const GET = gone;

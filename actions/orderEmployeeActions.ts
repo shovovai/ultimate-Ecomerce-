@@ -8,6 +8,16 @@ import { updateEmployeePerformance } from "./employeeActions";
 import { sendOrderStatusNotification } from "@/lib/notificationService";
 import { invalidateOrder } from "@/lib/cache";
 
+// Employees may only change real order documents
+async function orderDocId(orderId: string): Promise<string> {
+  const id = await backendClient.fetch<string | null>(
+    `*[_type == "order" && _id == $orderId][0]._id`,
+    { orderId }
+  );
+  if (!id) throw new Error("Order not found");
+  return id;
+}
+
 // Add status history entry
 async function addStatusHistory(
   orderId: string,
@@ -31,7 +41,7 @@ async function addStatusHistory(
     notes,
   });
 
-  await backendClient.patch(orderId).set({ statusHistory }).commit();
+  await backendClient.patch(await orderDocId(orderId)).set({ statusHistory }).commit();
 }
 
 // Call Center: Confirm address
@@ -47,7 +57,7 @@ export async function confirmAddress(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && employeeRole == "callcenter"][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && employeeRole == "callcenter"][0]`,
       { clerkUserId }
     );
 
@@ -59,7 +69,7 @@ export async function confirmAddress(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         addressConfirmedBy: employee.email,
         addressConfirmedAt: new Date().toISOString(),
@@ -107,7 +117,7 @@ export async function updateShippingAddress(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && employeeRole == "callcenter"][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && employeeRole == "callcenter"][0]`,
       { clerkUserId }
     );
 
@@ -131,7 +141,7 @@ export async function updateShippingAddress(
       };
     }
 
-    await backendClient.patch(orderId).set({ shippingAddress }).commit();
+    await backendClient.patch(await orderDocId(orderId)).set({ shippingAddress }).commit();
 
     await addStatusHistory(
       orderId,
@@ -167,7 +177,7 @@ export async function confirmOrder(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "callcenter" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "callcenter" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -189,7 +199,7 @@ export async function confirmOrder(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         orderConfirmedBy: employee.email,
         orderConfirmedAt: new Date().toISOString(),
@@ -251,7 +261,7 @@ export async function markAsPacked(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "packer" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "packer" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -276,7 +286,7 @@ export async function markAsPacked(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         packedBy: employee.email,
         packedAt: new Date().toISOString(),
@@ -340,7 +350,7 @@ export async function assignDeliveryman(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "warehouse" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "warehouse" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -365,7 +375,7 @@ export async function assignDeliveryman(
     }
 
     const deliveryman = await backendClient.fetch(
-      `*[_type == "user" && _id == $deliverymanId && isEmployee == true && employeeRole == "deliveryman"][0]`,
+      `*[_type == "user" && _id == $deliverymanId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && employeeRole == "deliveryman"][0]`,
       { deliverymanId }
     );
 
@@ -374,7 +384,7 @@ export async function assignDeliveryman(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         assignedDeliverymanId: deliverymanId,
         assignedDeliverymanName: `${deliveryman.firstName} ${deliveryman.lastName}`,
@@ -427,7 +437,7 @@ export async function markAsDelivered(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -463,7 +473,7 @@ export async function markAsDelivered(
       status: "delivered",
     };
 
-    await backendClient.patch(orderId).set(updateData).commit();
+    await backendClient.patch(await orderDocId(orderId)).set(updateData).commit();
 
     await addStatusHistory(
       orderId,
@@ -525,7 +535,7 @@ export async function collectCash(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -550,7 +560,7 @@ export async function collectCash(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         cashCollected: true,
         cashCollectedAmount: cashAmount,
@@ -600,7 +610,7 @@ export async function startDelivery(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -628,7 +638,7 @@ export async function startDelivery(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         status: "out_for_delivery",
         deliveryAttempts: (order.deliveryAttempts || 0) + 1,
@@ -686,7 +696,7 @@ export async function rescheduleDelivery(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -698,7 +708,7 @@ export async function rescheduleDelivery(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         status: "rescheduled",
         rescheduledDate: newDate,
@@ -743,7 +753,7 @@ export async function markDeliveryFailed(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -761,7 +771,7 @@ export async function markDeliveryFailed(
     );
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         status: "failed_delivery",
         deliveryAttempts: (order.deliveryAttempts || 0) + 1,
@@ -805,7 +815,7 @@ export async function receivePaymentFromDeliveryman(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "accounts" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "accounts" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -837,7 +847,7 @@ export async function receivePaymentFromDeliveryman(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         cashSubmissionStatus: "confirmed",
         paymentReceivedBy: employee.email,
@@ -889,7 +899,7 @@ export async function submitCashToAccounts(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "deliveryman" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -902,7 +912,7 @@ export async function submitCashToAccounts(
 
     // Verify the selected accounts employee exists and is active
     const accountsEmployee = await backendClient.fetch(
-      `*[_type == "user" && _id == $accountsEmployeeId && isEmployee == true && (employeeRole == "accounts" || employeeRole == "incharge") && employeeStatus == "active"][0]`,
+      `*[_type == "user" && _id == $accountsEmployeeId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "accounts" || employeeRole == "incharge") && employeeStatus == "active"][0]`,
       { accountsEmployeeId }
     );
 
@@ -947,7 +957,7 @@ export async function submitCashToAccounts(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         cashSubmittedToAccounts: true,
         cashSubmissionStatus: "pending",
@@ -1001,7 +1011,7 @@ export async function rejectCashSubmission(
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && (employeeRole == "accounts" || employeeRole == "incharge")][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "accounts" || employeeRole == "incharge")][0]`,
       { clerkUserId }
     );
 
@@ -1040,7 +1050,7 @@ export async function rejectCashSubmission(
     }
 
     await backendClient
-      .patch(orderId)
+      .patch(await orderDocId(orderId))
       .set({
         cashSubmissionStatus: "rejected",
         cashSubmissionRejectionReason: rejectionReason,
@@ -1084,7 +1094,7 @@ export async function getOrdersForEmployee() {
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"])][0]`,
       { clerkUserId }
     );
 
@@ -1194,7 +1204,7 @@ export async function getOrdersForAccounts() {
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"])][0]`,
       { clerkUserId }
     );
 
@@ -1267,7 +1277,7 @@ export async function getAccountsPaymentStats() {
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"])][0]`,
       { clerkUserId }
     );
 
@@ -1349,7 +1359,7 @@ export async function getActiveAccountsEmployees() {
     }
 
     const employee = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true][0]`,
+      `*[_type == "user" && clerkUserId == $clerkUserId && isEmployee == true && !(employeeStatus in ["inactive", "suspended"])][0]`,
       { clerkUserId }
     );
 
@@ -1359,7 +1369,7 @@ export async function getActiveAccountsEmployees() {
 
     // Get all active accounts employees
     const accountsEmployees = await backendClient.fetch(
-      `*[_type == "user" && isEmployee == true && (employeeRole == "accounts" || employeeRole == "incharge") && employeeStatus == "active"] | order(firstName asc) {
+      `*[_type == "user" && isEmployee == true && !(employeeStatus in ["inactive", "suspended"]) && (employeeRole == "accounts" || employeeRole == "incharge") && employeeStatus == "active"] | order(firstName asc) {
         _id,
         firstName,
         lastName,

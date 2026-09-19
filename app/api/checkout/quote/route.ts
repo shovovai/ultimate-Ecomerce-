@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { PricingError, normalizeCartInput, priceCart } from "@/lib/pricing";
 import { getCheckoutPaymentOptions } from "@/lib/paymentMethods";
+import { rateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,9 @@ export const dynamic = "force-dynamic";
 // Returns authoritative totals (same maths used when the order is created)
 // plus the payment options the customer can choose from.
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, "quote", { limit: 60, windowMs: 60_000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const items = normalizeCartInput(body.items);

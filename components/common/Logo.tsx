@@ -40,7 +40,6 @@ const Logo = ({ className, variant = "default", inverted = false }: Props) => {
   if (siteLogoUrl) {
     return (
       <Link href="/" aria-label={`${storeName} home`} className={cn("inline-flex items-center", className)}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={siteLogoUrl}
           alt={storeName}

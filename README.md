@@ -235,7 +235,10 @@ All settings live in `.env` (copy it from `.env.example`). **Never commit `.env`
 | `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD` | no | Optional fallback — normally entered in Admin → Payments |
 | `SSLCOMMERZ_SANDBOX` | no | `true` (default) for the sandbox, `false` for live payments |
 | `NEXT_PUBLIC_ADMIN_EMAIL` | yes | Admin emails, comma-separated: `owner@shop.com,manager@shop.com` |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `SENDER_EMAIL_ADDRESS` | for emails | Gmail OAuth2 used by Nodemailer |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | for emails | Any SMTP provider (Brevo, Mailgun, Amazon SES, Zoho, your host). Used when `SMTP_HOST` is set |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | for emails | Gmail OAuth2 — used when `SMTP_HOST` is empty |
+| `SENDER_EMAIL_ADDRESS` | for emails | The "From" address of store emails |
+| `UNSUBSCRIBE_SECRET` | no | Signs newsletter unsubscribe links (falls back to `PAYMENT_ENCRYPTION_KEY`) |
 | `NEXT_PUBLIC_COMPANY_NAME` | no | Store name (default `WebHaat`) |
 | `NEXT_PUBLIC_COMPANY_EMAIL`, `NEXT_PUBLIC_COMPANY_PHONE`, `NEXT_PUBLIC_COMPANY_ADDRESS`, `NEXT_PUBLIC_COMPANY_CITY` | no | Contact details shown on the site |
 | `NEXT_PUBLIC_COMPANY_BUSINESS_HOURS_WEEKDAY` / `_WEEKEND` | no | Opening hours text |
@@ -312,14 +315,19 @@ All payment methods are managed from **Admin → Payments → Gateways & methods
 3. Test with the sandbox (`SSLCOMMERZ_SANDBOX=true`). For real payments, apply for a live merchant account, use the live credentials and set `SSLCOMMERZ_SANDBOX=false`.
 4. `NEXT_PUBLIC_BASE_URL` must be your public site URL: SSLCommerz sends customers back to `/api/payments/sslcommerz/success|fail|cancel` and notifies `/api/payments/sslcommerz/ipn`. For local testing use a tunnel such as `ngrok http 3000`.
 
-### Email (Gmail OAuth2 via Nodemailer)
+### Email
+
+**Recommended:** any SMTP provider. Fill `SMTP_HOST`, `SMTP_PORT` (587, or 465 with `SMTP_SECURE=true`), `SMTP_USER`, `SMTP_PASSWORD` and `SENDER_EMAIL_ADDRESS`.
+
+**Or Gmail (OAuth2):**
+
 
 1. In [Google Cloud Console](https://console.cloud.google.com) create an OAuth client (Web application) and enable the Gmail API.
 2. Add `https://developers.google.com/oauthplayground` as an authorized redirect URI.
 3. In the [OAuth Playground](https://developers.google.com/oauthplayground), use your own client ID/secret, authorize `https://mail.google.com/`, and exchange the code for a **refresh token**.
 4. Fill `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, and `SENDER_EMAIL_ADDRESS` (the Gmail address).
 
-> Gmail limits sending to about 500 emails per day (2,000 for Google Workspace). For larger newsletters, point the Nodemailer transporter in `lib/emailService.ts` at an SMTP provider such as SendGrid, Mailgun, Amazon SES or Brevo.
+> Gmail limits sending to about 500 emails per day (2,000 for Google Workspace). For larger newsletters use an SMTP provider instead.
 
 ### Firebase Analytics (optional)
 
@@ -425,12 +433,29 @@ Run it behind a reverse proxy (Nginx or Caddy) with HTTPS, and use a process man
 - **Make your Sanity dataset private.** Orders, customers and addresses are stored in Sanity. In a *public* dataset anyone can read them through Sanity's API. Go to [sanity.io/manage](https://www.sanity.io/manage) → your project → **Datasets** → `production` → set visibility to **Private**. The site keeps working because the server reads with `SANITY_API_READ_TOKEN`.
 - All order totals are computed on the server (`lib/pricing.ts`); payment gateways are charged the stored total and payments are verified server-to-server before an order is marked paid.
 
-- Admin rights come only from `NEXT_PUBLIC_ADMIN_EMAIL`. Every `/api/admin/*` route calls `requireAdmin()` (`lib/adminAuth.ts`), and the admin layout verifies the user on the server.
+- Admin rights come only from `NEXT_PUBLIC_ADMIN_EMAIL`, matched against the user's **verified** primary email in Clerk — never from data stored in Sanity. The proxy (`proxy.ts`) blocks `/admin`, `/studio`, `/api/admin/*` and `/api/analytics/*` for non-admins, and every admin route and server action checks again on its own (`lib/adminAuth.ts`).
+- Customer APIs only ever act on the signed-in user's own data (profile, addresses, reviews, account applications) — ids or emails sent by the browser are ignored or checked for ownership.
+- Public forms (contact, newsletter, checkout, order placement, reviews) are rate-limited (`lib/rateLimit.ts`). The limiter is per server instance; for strict global limits add your host's firewall/WAF rules or a shared store such as Upstash Redis.
+- Newsletter unsubscribe links are signed, so nobody can unsubscribe someone else.
+- Security headers (HSTS, clickjacking protection, nosniff, referrer and permissions policy) are sent on every page (`next.config.ts`). Structured data and emails escape user-entered text.
+- On startup the server logs missing or unsafe configuration (`instrumentation.ts`), e.g. test Clerk keys or a non-https base URL.
+- Dependencies: `npm audit` reports 0 known vulnerabilities. A few transitive packages are pinned to patched versions via `overrides` in `package.json`.
 - Employee-management server actions check that the caller is an admin, and order-processing actions check the employee's role.
 - The fake "Clerk payment" gateway from the original template was removed, and so was the open `/api/orders/send-email` endpoint.
 - Wallet credits can only be added from server code (`lib/walletCredit.ts`). They cannot be triggered from the browser.
 - CSV exports neutralize spreadsheet formulas to prevent CSV injection.
 - Keep `SANITY_API_TOKEN`, `CLERK_SECRET_KEY`, `STRIPE_SECRET_KEY` and the Google secrets private. If they were ever committed to git or shared, **rotate them** in each provider's dashboard.
+
+---
+
+### Launch checklist
+
+1. **Sanity:** dataset visibility **Private**; add your domain to CORS origins.
+2. **Clerk:** create a *production* instance, use its keys (`pk_live_…`/`sk_live_…`), add your domain, and set the application name (it appears as "Sign in to …").
+3. **Environment:** `NEXT_PUBLIC_BASE_URL=https://your-domain`, a strong `PAYMENT_ENCRYPTION_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`, email settings (SMTP or Gmail).
+4. **Payments:** switch gateways from sandbox to live in Admin → Payments; create the Stripe webhook for `/api/webhook`.
+5. **Secrets:** if any key was ever committed or shared, rotate it before launch.
+6. Check the server log after the first deploy — `[config]` lines list anything still missing.
 
 ---
 

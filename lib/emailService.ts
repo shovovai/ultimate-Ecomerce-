@@ -1,18 +1,29 @@
 import { formatPrice } from "@/lib/storeConfig";
+import { escapeHtml } from "@/lib/html";
 import nodemailer, { Transporter, SentMessageInfo } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 
-const transporter: Transporter<SMTPTransport.SentMessageInfo> =
-  nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      type: "OAuth2",
-      user: process.env.SENDER_EMAIL_ADDRESS || "noreply@webhaat.com",
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-    },
-  });
+// Any SMTP provider (SMTP_HOST…) or Gmail with OAuth2 (GOOGLE_*), whichever is configured
+const smtpPort = Number(process.env.SMTP_PORT || 587);
+const transporter: Transporter<SMTPTransport.SentMessageInfo> = process.env.SMTP_HOST
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: smtpPort,
+      secure: process.env.SMTP_SECURE === "true" || smtpPort === 465,
+      auth: process.env.SMTP_USER
+        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
+        : undefined,
+    })
+  : nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: process.env.SENDER_EMAIL_ADDRESS || "noreply@webhaat.com",
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+      },
+    });
 
 // Type definitions
 interface OrderItem {
@@ -61,8 +72,30 @@ interface SendMailParams {
   html?: string;
 }
 
-const generateOrderConfirmationHTML = (data: OrderConfirmationData): string => {
+const generateOrderConfirmationHTML = (raw: OrderConfirmationData): string => {
   const formatCurrency = (amount: number) => `${formatPrice(amount)}`;
+  // Customer-entered text (name, address, coupon…) is escaped before it reaches the HTML
+  const data: OrderConfirmationData = {
+    ...raw,
+    customerName: escapeHtml(raw.customerName),
+    orderId: escapeHtml(raw.orderId),
+    orderDate: escapeHtml(raw.orderDate),
+    couponCode: raw.couponCode ? escapeHtml(raw.couponCode) : raw.couponCode,
+    estimatedDelivery: raw.estimatedDelivery ? escapeHtml(raw.estimatedDelivery) : raw.estimatedDelivery,
+    items: raw.items.map((item) => ({
+      ...item,
+      name: escapeHtml(item.name),
+      image: item.image ? escapeHtml(item.image) : item.image,
+    })),
+    shippingAddress: {
+      name: escapeHtml(raw.shippingAddress.name),
+      street: escapeHtml(raw.shippingAddress.street),
+      city: escapeHtml(raw.shippingAddress.city),
+      state: escapeHtml(raw.shippingAddress.state),
+      zipCode: escapeHtml(raw.shippingAddress.zipCode),
+      country: escapeHtml(raw.shippingAddress.country),
+    },
+  };
 
   return `
 <!DOCTYPE html>

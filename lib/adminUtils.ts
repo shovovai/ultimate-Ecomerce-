@@ -25,27 +25,7 @@ export const isUserAdmin = (userEmail: string | null | undefined): boolean => {
   return adminEmails.includes(userEmail.toLowerCase());
 };
 
-/**
- * Comprehensive admin check that considers both database isAdmin field and environment variable
- * @param user - User object with email and isAdmin fields
- * @returns true if user is admin based on either database flag or environment variable
- */
-export const isAdmin = (
-  user: { email?: string | null; isAdmin?: boolean } | null | undefined
-): boolean => {
-  if (!user) return false;
-
-  // Check if user has isAdmin flag set in database
-  if (user.isAdmin === true) return true;
-
-  // Fallback to environment variable check
-  if (user.email) {
-    return isUserAdmin(user.email);
-  }
-
-  return false;
-};
-
+/** UI-only hint (shows admin links). Real access is enforced on the server. */
 export const useIsAdmin = (userEmail: string | null | undefined): boolean => {
   return isUserAdmin(userEmail);
 };

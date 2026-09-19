@@ -192,7 +192,6 @@ export default function ProductFormDialog({ open, productId, onOpenChange, onSav
               <div className="flex flex-wrap gap-3">
                 {form.images.map((img, i) => (
                   <div key={img.assetId} className="group relative h-24 w-24 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={`${img.url}?w=200&h=200&fit=max`} alt="" className="h-full w-full object-contain p-1" />
                     {i === 0 && (
                       <span className="absolute bottom-1 left-1 rounded bg-gray-900/80 px-1.5 text-[10px] font-semibold text-white">

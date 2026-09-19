@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function UnsubscribeForm({ initialEmail }: { initialEmail: string }) {
+export default function UnsubscribeForm({ initialEmail, token }: { initialEmail: string; token: string }) {
   const [email, setEmail] = useState(initialEmail);
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -16,7 +16,7 @@ export default function UnsubscribeForm({ initialEmail }: { initialEmail: string
       const res = await fetch("/api/newsletter/unsubscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, token }),
       });
       const data = await res.json();
       setState(res.ok ? "done" : "error");

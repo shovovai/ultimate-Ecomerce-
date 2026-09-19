@@ -1,34 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId } = await auth();
+// Retired endpoint: nothing in the app calls it and the old version trusted
+// client-supplied user ids/amounts. Safe to delete this file.
+const gone = () => NextResponse.json({ error: "This endpoint has been removed" }, { status: 410 });
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id: notificationId } = await params;
-
-    // Here you would update the notification in your database
-    // For now, we'll just return success
-    console.log(
-      `Marking notification ${notificationId} as read for user ${userId}`
-    );
-
-    return NextResponse.json({
-      success: true,
-      message: "Notification marked as read",
-    });
-  } catch (error) {
-    console.error("Error marking notification as read:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
+export const PATCH = gone;

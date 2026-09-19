@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeClient, client } from "@/sanity/lib/client";
+import { getCurrentUserEmail } from "@/lib/adminAuth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,10 +11,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { email } = await request.json();
-
+    // The applicant is always the signed-in user, never an email from the request
+    const email = await getCurrentUserEmail();
     if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+      return NextResponse.json({ error: "Please verify your email address first" }, { status: 400 });
     }
 
     // Check if user exists in Sanity

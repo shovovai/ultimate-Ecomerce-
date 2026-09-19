@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeClient, client } from "@/sanity/lib/client";
+import { getCurrentUserEmail } from "@/lib/adminAuth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +11,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { email, applicationType } = await request.json(); // applicationType: "premium" | "business"
+    const { applicationType } = await request.json().catch(() => ({})); // "premium" | "business"
+    // Only the signed-in user's own application can be cancelled
+    const email = await getCurrentUserEmail();
 
     if (!email || !applicationType) {
       return NextResponse.json(

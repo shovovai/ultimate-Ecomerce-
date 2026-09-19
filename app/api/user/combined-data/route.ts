@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { client } from "@/sanity/lib/client";
+import { backendClient } from "@/sanity/lib/backendClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,31 +17,20 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch all data in parallel
-    const [user, orders, notifications] = await Promise.all([
-      // Get user data including employee status
-      client.fetch(
+    // Fetch all data in parallel (uncached — badges must be current)
+    const [user, orders] = await Promise.all([
+      backendClient.fetch(
         `*[_type == "user" && clerkUserId == $userId][0]{
           _id,
           email,
           role,
-          isEmployee,
-          walletBalance
+          "isEmployee": isEmployee == true && !(employeeStatus in ["inactive", "suspended"]),
+          walletBalance,
+          "unread": count(notifications[read != true])
         }`,
         { userId }
       ),
-      // Get orders count
-      client.fetch(`count(*[_type == "order" && userId == $userId])`, {
-        userId,
-      }),
-      // Get unread notifications count
-      client.fetch(
-        `*[_type == "notification" && userId == $userId && !read] | order(_createdAt desc)[0...20]{
-          _id,
-          read
-        }`,
-        { userId }
-      ),
+      backendClient.fetch<number>(`count(*[_type == "order" && clerkUserId == $userId])`, { userId }),
     ]);
 
     return NextResponse.json(
@@ -49,7 +38,7 @@ export async function GET() {
         user: user || null,
         ordersCount: orders || 0,
         isEmployee: user?.isEmployee || false,
-        unreadNotifications: notifications?.length || 0,
+        unreadNotifications: user?.unread || 0,
         walletBalance: user?.walletBalance || 0,
       },
       {

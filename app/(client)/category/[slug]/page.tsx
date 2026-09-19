@@ -8,6 +8,7 @@ import {
   generateCategoryMetadata,
   generateItemListSchema,
 } from "@/lib/seo";
+import { jsonLd } from "@/lib/jsonLd";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -50,8 +51,8 @@ export default async function CategoryPage({ params }: Props) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(itemListSchema) }} />
       <ProductListingPage
         eyebrow="Category"
         title={category.title}

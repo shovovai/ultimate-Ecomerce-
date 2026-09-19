@@ -44,19 +44,22 @@ export async function GET(req: NextRequest) {
 
     // Get query parameters
     const { searchParams } = new URL(req.url);
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20") || 20, 1), 200);
+    const offset = Math.max(parseInt(searchParams.get("offset") || "0") || 0, 0);
     const type = searchParams.get("type") || "";
     const priority = searchParams.get("priority") || "";
     const dateFilter = searchParams.get("dateFilter") || "";
 
     // Build filter conditions
     const filterConditions = [];
+    const queryParams: Record<string, string> = {};
     if (type && type !== "all") {
-      filterConditions.push(`type == "${type}"`);
+      filterConditions.push(`type == $type`);
+      queryParams.type = type;
     }
     if (priority && priority !== "all") {
-      filterConditions.push(`priority == "${priority}"`);
+      filterConditions.push(`priority == $priority`);
+      queryParams.priority = priority;
     }
 
     // Add date filter conditions
@@ -126,8 +129,8 @@ export async function GET(req: NextRequest) {
 
     // Execute queries
     const [notifications, totalCount] = await Promise.all([
-      client.fetch(query),
-      client.fetch(countQuery),
+      client.fetch(query, queryParams),
+      client.fetch(countQuery, queryParams),
     ]);
 
     // Transform the data to match the interface

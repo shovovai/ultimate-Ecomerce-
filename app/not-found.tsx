@@ -1,58 +1,41 @@
-import Logo from "@/components/common/Logo";
 import Link from "next/link";
+import Logo from "@/components/common/Logo";
 
-const NotFoundPage = () => {
+export default function NotFoundPage() {
   return (
-    <div className="bg-white flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-10 md:py-32">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
+    <div className="flex min-h-[70vh] items-center justify-center bg-cream px-4 py-16">
+      <div className="max-w-md text-center">
+        <div className="flex justify-center">
           <Logo />
-
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Looking for something?
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            We&apos;re sorry. The Web address you entered is not a functioning
-            page on our site.
-          </p>
         </div>
-        <div className="mt-8 space-y-6">
-          <div className="rounded-md shadow-xs space-y-4">
-            <Link
-              href="/"
-              className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-semibold rounded-md text-white bg-shop_dark_green/80 hover:bg-shop_dark_green focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-amazonOrangeDark hoverEffect"
-            >
-              Go to WebHaat&apos;s home page
-            </Link>
-            <Link
-              href="/help"
-              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-md text-amazonBlue bg-white hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-amazonBlue"
-            >
-              Help
-            </Link>
-          </div>
-        </div>
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Need help? Visit the{" "}
-            <Link
-              href="/help"
-              className="font-medium text-amazon-blue hover:text-amazon-blue-dark"
-            >
-              Help section
-            </Link>{" "}
-            or{" "}
-            <Link
-              href="/contact"
-              className="font-medium text-amazon-blue hover:text-amazon-blue-dark"
-            >
-              contact us
-            </Link>
-          </p>
+        <p className="mt-10 font-display text-7xl leading-none text-clay">404</p>
+        <h1 className="mt-4 font-display text-3xl leading-tight text-ink">
+          This stall is empty.
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-light-color">
+          The page you&apos;re looking for doesn&apos;t exist or has moved.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/"
+            className="inline-flex items-center rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-clay"
+          >
+            Back to home
+          </Link>
+          <Link
+            href="/shop"
+            className="inline-flex items-center rounded-full border border-ink/15 px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-ink"
+          >
+            Browse the shop
+          </Link>
+          <Link
+            href="/help"
+            className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-light-color transition-colors hover:text-ink"
+          >
+            Help center
+          </Link>
         </div>
       </div>
     </div>
   );
-};
-
-export default NotFoundPage;
+}

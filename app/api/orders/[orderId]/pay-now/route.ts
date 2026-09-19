@@ -5,12 +5,16 @@ import {
   createStripeSessionForOrder,
   loadPayableOrder,
 } from "@/lib/stripeCheckout";
+import { rateLimit } from "@/lib/rateLimit";
 
 // Pay an existing (unpaid) order by card. Charges the stored order total.
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
+  const limited = rateLimit(request, "pay-now", { limit: 20, windowMs: 10 * 60_000 });
+  if (limited) return limited;
+
   try {
     const { userId } = await auth();
     if (!userId) {

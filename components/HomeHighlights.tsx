@@ -1,32 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Headset, ShieldCheck, Truck, Undo2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Container from "./Container";
-
-const values = [
-  { icon: Truck, title: "Quick delivery", text: "Fast dispatch, tracked to your door" },
-  { icon: ShieldCheck, title: "Secure checkout", text: "Card, wallet or cash on delivery" },
-  { icon: Undo2, title: "Easy returns", text: "Changed your mind? Return within 7 days" },
-  { icon: Headset, title: "Real support", text: "Friendly humans, 7 days a week" },
-];
-
-/** Thin row of store promises shown under the hero */
-export const ValueStrip = () => (
-  <Container className="mt-6">
-    <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-4">
-      {values.map(({ icon: Icon, title, text }) => (
-        <li key={title} className="flex items-start gap-3 bg-cream p-4 sm:p-5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-shop_light_pink text-clay">
-            <Icon className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-ink">{title}</p>
-            <p className="mt-0.5 hidden text-xs text-light-color sm:block">{text}</p>
-          </div>
-        </li>
-      ))}
-    </ul>
-  </Container>
-);
 
 /** Two editorial promo tiles */
 export const PromoBand = () => (

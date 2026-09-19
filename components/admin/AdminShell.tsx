@@ -133,7 +133,6 @@ export default function AdminShell({ children, settings, user }: AdminShellProps
     <div className="flex h-full flex-col bg-white">
       <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-5">
         {settings.adminLogoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={settings.adminLogoUrl}
             alt={settings.adminPanelTitle}
@@ -265,7 +264,6 @@ export default function AdminShell({ children, settings, user }: AdminShellProps
           </Link>
           <div className="hidden items-center gap-3 sm:flex">
             {user.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={user.imageUrl}
                 alt={user.name}

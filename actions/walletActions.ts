@@ -141,6 +141,10 @@ export async function deductWalletBalance(
 
     const currentBalance = user.walletBalance || 0;
 
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, message: "Invalid amount" };
+    }
+
     if (currentBalance < amount) {
       return {
         success: false,
@@ -208,8 +212,11 @@ export async function requestWithdrawal(data: {
     }
 
     // Validate amount
-    if (data.amount <= 0) {
+    if (typeof data?.amount !== "number" || !Number.isFinite(data.amount) || data.amount <= 0) {
       return { success: false, message: "Invalid amount" };
+    }
+    if (!["bank", "paypal", "stripe", "check"].includes(data.method)) {
+      return { success: false, message: "Invalid withdrawal method" };
     }
 
     // Minimum withdrawal amount
@@ -230,12 +237,16 @@ export async function requestWithdrawal(data: {
       return { success: false, message: "User not found" };
     }
 
-    const currentBalance = user.walletBalance || 0;
+    // Money already requested (still pending) is not available again
+    const pendingTotal = (user.withdrawalRequests || [])
+      .filter((r: WithdrawalRequest) => r.status === "pending")
+      .reduce((sum: number, r: WithdrawalRequest) => sum + (Number(r.amount) || 0), 0);
+    const available = (user.walletBalance || 0) - pendingTotal;
 
-    if (currentBalance < data.amount) {
+    if (available < data.amount) {
       return {
         success: false,
-        message: `Insufficient balance. Available: ${formatPrice(currentBalance)}`,
+        message: `Insufficient balance. Available: ${formatPrice(Math.max(available, 0))}`,
       };
     }
 

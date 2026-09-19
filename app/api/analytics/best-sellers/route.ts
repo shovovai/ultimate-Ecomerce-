@@ -1,6 +1,7 @@
 // Analytics API for tracking best-selling products and comprehensive analytics
 import { NextRequest, NextResponse } from "next/server";
 import { backendClient } from "@/sanity/lib/backendClient";
+import { requireAdmin } from "@/lib/adminAuth";
 
 interface OrderProduct {
   product: {
@@ -24,10 +25,14 @@ interface Order {
 }
 
 export async function GET(request: NextRequest) {
+  // Sales figures are business data — admins only
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const timeframe = searchParams.get("timeframe") || "monthly"; // weekly, monthly, yearly
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10") || 10, 1), 50);
 
     // Calculate date range based on timeframe
     const now = new Date();
@@ -89,34 +94,6 @@ export async function GET(request: NextRequest) {
     const bestSellers = Array.from(productStats.values())
       .sort((a, b) => b.salesCount - a.salesCount)
       .slice(0, limit);
-
-    // Track this analytics data
-    try {
-      await fetch(
-        `${
-          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-        }/api/analytics/track`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            eventName: "best_selling_products",
-            eventParams: {
-              products: bestSellers,
-              timeframe,
-              totalProducts: bestSellers.length,
-              totalRevenue: bestSellers.reduce((sum, p) => sum + p.revenue, 0),
-              totalSales: bestSellers.reduce((sum, p) => sum + p.salesCount, 0),
-            },
-          }),
-        }
-      );
-    } catch (analyticsError) {
-      console.error(
-        "Failed to track best selling products analytics:",
-        analyticsError
-      );
-    }
 
     // Get overall analytics
     const totalOrdersQuery = `count(*[_type == "order" && orderDate >= $startDate])`;

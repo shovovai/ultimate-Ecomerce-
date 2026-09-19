@@ -1,25 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unsubscribeFromNewsletter } from "@/actions/subscriptionActions";
+import { getCurrentUserEmail } from "@/lib/adminAuth";
+import { isValidEmail } from "@/lib/html";
+import { rateLimit } from "@/lib/rateLimit";
+import { verifyUnsubscribeToken } from "@/lib/unsubscribeToken";
 
+// Allowed when the request carries the signed token from our emails,
+// or when a signed-in user unsubscribes their own verified address.
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { email } = body;
+  const limited = rateLimit(request, "unsubscribe", { limit: 10, windowMs: 10 * 60_000 });
+  if (limited) return limited;
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  try {
+    const body = await request.json().catch(() => ({}));
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: "Please enter a valid email address" }, { status: 400 });
+    }
+
+    const ownEmail = await getCurrentUserEmail().catch(() => null);
+    if (ownEmail !== email && !verifyUnsubscribeToken(email, body.token)) {
+      return NextResponse.json(
+        {
+          error:
+            "Please use the unsubscribe link from one of our emails, or sign in and manage it from your profile.",
+        },
+        { status: 403 }
+      );
     }
 
     const result = await unsubscribeFromNewsletter(email);
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.message }, { status: 400 });
-    }
-
+    // Same answer whether or not the address was subscribed
     return NextResponse.json(
-      {
-        message: result.message,
-      },
+      { message: result.success ? result.message : "You're unsubscribed. You won't receive newsletter emails." },
       { status: 200 }
     );
   } catch (error) {

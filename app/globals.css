@@ -466,7 +466,7 @@
 @media (max-width: 640px) {
   .clerk-sign-in,
   .clerk-sign-up {
-    padding: 1rem 0.5rem !important;
+    padding: 0 !important;
   }
 }
 

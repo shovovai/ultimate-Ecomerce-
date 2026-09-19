@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { CheckoutError, loadPayableOrder } from "@/lib/stripeCheckout";
 import { createBkashPayment } from "@/lib/bkash";
+import { rateLimit } from "@/lib/rateLimit";
 
 // POST /api/checkout/bkash  { orderId }  → { url } of the bKash payment page
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, "pay-bkash", { limit: 20, windowMs: 10 * 60_000 });
+  if (limited) return limited;
+
   try {
     const { userId } = await auth();
     if (!userId) {

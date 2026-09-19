@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { CheckoutError, loadPayableOrder } from "@/lib/stripeCheckout";
 import { createSslCommerzSession } from "@/lib/sslcommerz";
+import { rateLimit } from "@/lib/rateLimit";
 
 // POST /api/checkout/sslcommerz  { orderId }  → { url } of the SSLCommerz gateway
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, "pay-ssl", { limit: 20, windowMs: 10 * 60_000 });
+  if (limited) return limited;
+
   try {
     const { userId } = await auth();
     if (!userId) {

@@ -5,10 +5,14 @@ import {
   createStripeSessionForOrder,
   loadPayableOrder,
 } from "@/lib/stripeCheckout";
+import { rateLimit } from "@/lib/rateLimit";
 
 // POST /api/checkout/stripe  { orderId }
 // Starts a Stripe Checkout session for an existing order owned by the caller.
 export const POST = async (request: NextRequest) => {
+  const limited = rateLimit(request, "pay-stripe", { limit: 20, windowMs: 10 * 60_000 });
+  if (limited) return limited;
+
   try {
     const { userId } = await auth();
     if (!userId) {

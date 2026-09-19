@@ -93,7 +93,6 @@ export function useCheckoutQuote(couponCode: string, paymentOptionId = "") {
       }
     }, 250);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, couponCode, paymentOptionId]);
 
   return { items, pricing, paymentOptions, error, loading };

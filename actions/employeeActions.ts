@@ -2,6 +2,7 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { isUserAdmin } from "@/lib/adminUtils";
+import { verifiedPrimaryEmail } from "@/lib/adminAuth";
 import { backendClient } from "@/sanity/lib/backendClient";
 import {
   Employee,
@@ -17,8 +18,7 @@ async function getCallerEmail(): Promise<string | null> {
   const { userId } = await auth();
   if (!userId) return null;
   const clerk = await clerkClient();
-  const user = await clerk.users.getUser(userId);
-  return user.primaryEmailAddress?.emailAddress ?? null;
+  return verifiedPrimaryEmail(await clerk.users.getUser(userId));
 }
 
 async function callerIsAdmin(): Promise<boolean> {

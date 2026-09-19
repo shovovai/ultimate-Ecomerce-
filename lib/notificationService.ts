@@ -197,6 +197,13 @@ export const sendOrderStatusNotification = async (
     const { clerkUserId, orderNumber, orderId, status, previousStatus } =
       params;
 
+    // Respect Account → Settings → "Order status alerts"
+    const optedOut = await writeClient.fetch<boolean>(
+      `*[_type == "user" && clerkUserId == $clerkUserId][0].preferences.orderUpdates == false`,
+      { clerkUserId }
+    );
+    if (optedOut) return { success: true, skipped: true };
+
     const { title, message, priority } = getOrderStatusMessage(
       status,
       orderNumber,

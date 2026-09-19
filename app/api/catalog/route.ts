@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { client } from "@/sanity/lib/client";
+import { rateLimit } from "@/lib/rateLimit";
 
 // Fixed, read-only catalog queries used by browser components (search, shop
 // filters, category pages). Only product / category / brand data can be
@@ -45,6 +46,9 @@ function paramsFor(action: Action, p: Record<string, unknown>) {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, "catalog", { limit: 120, windowMs: 60_000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const action = body?.action as Action;

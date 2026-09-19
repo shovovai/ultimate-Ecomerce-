@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { ClerkLoaded, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
-import { Flame, LifeBuoy, Search, Truck, UserRound } from "lucide-react";
+import { Flame, LifeBuoy, Truck, UserRound } from "lucide-react";
 import Container from "./Container";
 import HeaderMenu from "./layout/HeaderMenu";
 import Logo from "./common/Logo";
@@ -15,7 +15,7 @@ import NotificationBell from "./NotificationBell";
 import UserDropdown from "./UserDropdown";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { openSearch } from "./layout/BottomNav";
+import { safeRedirectPath } from "@/lib/safeRedirect";
 
 const iconWrap =
   "flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-sand transition-colors";
@@ -26,20 +26,10 @@ const ClientHeader = () => {
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  // Phones: hide the search row while scrolling down, show it again on scroll up
-  const [compact, setCompact] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    let lastY = window.scrollY;
-    const onScroll = () => {
-      const y = window.scrollY;
-      setScrolled(y > 8);
-      if (Math.abs(y - lastY) > 6) {
-        setCompact(y > 120 && y > lastY);
-        lastY = y;
-      }
-    };
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -50,8 +40,7 @@ const ClientHeader = () => {
     if (isSignedIn && user && isMounted && typeof window !== "undefined") {
       const redirectTo = searchParams.get("redirectTo");
       if (redirectTo) {
-        router.push(decodeURIComponent(redirectTo));
-        router.replace(window.location.pathname);
+        router.replace(safeRedirectPath(redirectTo));
       }
     }
   }, [isSignedIn, user, searchParams, router, isMounted]);
@@ -77,6 +66,7 @@ const ClientHeader = () => {
             <Logo />
           </div>
 
+          {/* Phones: trigger hidden (search lives in the bottom nav), modal still mounted here */}
           <div className="ml-auto flex min-w-0 flex-1 justify-end sm:ml-0 sm:justify-center">
             <div className="w-auto sm:w-full sm:max-w-xl">
               <SearchBar />
@@ -118,24 +108,6 @@ const ClientHeader = () => {
           </div>
         </div>
 
-        {/* Phone search row (collapses while scrolling down) */}
-        <div
-          className={cn(
-            "grid transition-all duration-300 sm:hidden",
-            compact ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] pb-3 opacity-100"
-          )}
-        >
-          <div className="overflow-hidden">
-            <button
-              type="button"
-              onClick={openSearch}
-              className="flex h-11 w-full items-center gap-3 rounded-2xl bg-sand px-4 text-left text-sm text-light-color ring-1 ring-ink/5 active:scale-[0.99]"
-            >
-              <Search className="h-4 w-4 text-ink/60" />
-              Search products, brands…
-            </button>
-          </div>
-        </div>
       </Container>
 
       {/* Navigation band (desktop) */}

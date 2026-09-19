@@ -214,6 +214,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Only an address that belongs to this user can be changed
+    const owned = await backendClient.fetch<string | null>(
+      `*[_type == "address" && _id == $id && email == $email][0]._id`,
+      { id: String(_id), email: userEmail }
+    );
+    if (!owned) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
+
     // If this is set as default, unset all other default addresses for this user
     if (isDefault) {
       const existingAddresses = await backendClient.fetch(
@@ -231,7 +240,7 @@ export async function PUT(request: NextRequest) {
 
     // Update the address
     const updatedAddress = await backendClient
-      .patch(_id)
+      .patch(owned)
       .set({
         name,
         address,
@@ -257,10 +266,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error("Error updating address:", error);
     return NextResponse.json(
-      {
-        error: "Failed to update address",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to update address" },
       { status: 500 }
     );
   }
@@ -269,8 +275,9 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { userId } = await auth();
+    const user = await currentUser();
 
-    if (!userId) {
+    if (!userId || !user) {
       return NextResponse.json(
         { error: "User not authenticated" },
         { status: 401 }
@@ -287,8 +294,27 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete the address
-    await backendClient.delete(addressId);
+    // Only an address that belongs to this user can be deleted
+    const userEmail = user.emailAddresses[0]?.emailAddress;
+    const owned = userEmail
+      ? await backendClient.fetch<string | null>(
+          `*[_type == "address" && _id == $id && email == $email][0]._id`,
+          { id: addressId, email: userEmail }
+        )
+      : null;
+    if (!owned) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
+
+    // Drop the reference from the user profile first, then the address itself
+    const userDoc = await backendClient.fetch<string | null>(
+      `*[_type == "user" && clerkUserId == $userId && $id in addresses[]._ref][0]._id`,
+      { userId, id: owned }
+    );
+    const tx = backendClient.transaction();
+    if (userDoc) tx.patch(userDoc, (p) => p.unset([`addresses[_ref == "${owned}"]`]));
+    tx.delete(owned);
+    await tx.commit();
 
     return NextResponse.json({
       success: true,

@@ -47,7 +47,6 @@ export default function ImageUploadField({ value, onChange, previewClassName, ac
         )}
       >
         {value ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={value} alt="" className="h-full w-full object-contain p-2" />
         ) : (
           <ImagePlus className="h-6 w-6 text-gray-400" />

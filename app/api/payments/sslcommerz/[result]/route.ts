@@ -33,10 +33,11 @@ export async function POST(
     return NextResponse.json({ received: true, paid });
   }
 
+  const orderPath = encodeURIComponent(resolvedOrderId);
   const target = paid
-    ? `${brand.url}/success?order_id=${resolvedOrderId}&payment_method=sslcommerz`
+    ? `${brand.url}/success?order_id=${orderPath}&payment_method=sslcommerz`
     : resolvedOrderId
-      ? `${brand.url}/user/orders/${resolvedOrderId}?payment=${result === "cancel" ? "cancelled" : "failed"}`
+      ? `${brand.url}/user/orders/${orderPath}?payment=${result === "cancel" ? "cancelled" : "failed"}`
       : `${brand.url}/user/orders`;
 
   return NextResponse.redirect(target, 303);

@@ -20,6 +20,7 @@ import { resolvePaymentOption } from "@/lib/paymentMethods";
 import { getPaymentConfig } from "@/lib/paymentConfig";
 import { validateManualSubmission } from "@/lib/manualPayment";
 import { notifyAdminsOfManualPayment } from "@/lib/orderPayment";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function GET() {
   try {
@@ -49,6 +50,9 @@ const str = (v: unknown, max = 200) =>
 //         manualPayment?: { senderNumber, transactionId } }
 // All amounts are calculated on the server — client-sent totals are ignored.
 export const POST = async (request: NextRequest) => {
+  const limited = rateLimit(request, "orders", { limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
+
   try {
     const { userId } = await auth();
     const user = await currentUser();

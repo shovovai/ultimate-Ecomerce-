@@ -78,7 +78,7 @@ const getAllProducts = unstable_cache(
       const { data } = await sanityFetch({ query: ALL_PRODUCTS_QUERY });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching all products:", error);
+      console.error("Error fetching all products:", error);
       return [];
     }
   },
@@ -96,7 +96,7 @@ const getDealProducts = unstable_cache(
       const { data } = await sanityFetch({ query: DEAL_PRODUCTS });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching deal products:", error);
+      console.error("Error fetching deal products:", error);
       return [];
     }
   },
@@ -114,7 +114,7 @@ const getFeaturedProducts = unstable_cache(
       const { data } = await sanityFetch({ query: FEATURE_PRODUCTS });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching featured products:", error);
+      console.error("Error fetching featured products:", error);
       return [];
     }
   },
@@ -132,7 +132,7 @@ const getAllBrands = unstable_cache(
       const { data } = await sanityFetch({ query: BRANDS_QUERY });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching all brands:", error);
+      console.error("Error fetching all brands:", error);
       return [];
     }
   },
@@ -150,7 +150,7 @@ const getLatestBlogs = unstable_cache(
       const { data } = await sanityFetch({ query: LATEST_BLOG_QUERY });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching latest blogs:", error);
+      console.error("Error fetching latest blogs:", error);
       return [];
     }
   },
@@ -170,7 +170,7 @@ const getAllBlogs = unstable_cache(
       });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching all blogs:", error);
+      console.error("Error fetching all blogs:", error);
       return [];
     }
   },
@@ -191,7 +191,7 @@ const getSingleBlog = unstable_cache(
       });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching blog:", error);
+      console.error("Error fetching blog:", error);
       return [];
     }
   },
@@ -211,7 +211,7 @@ const getBlogCategories = unstable_cache(
       });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching blog categories:", error);
+      console.error("Error fetching blog categories:", error);
       return [];
     }
   },
@@ -231,7 +231,7 @@ const getOthersBlog = unstable_cache(
       });
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching other blogs:", error);
+      console.error("Error fetching other blogs:", error);
       return [];
     }
   },
@@ -249,7 +249,7 @@ const getAddresses = async () => {
     });
     return data ?? [];
   } catch (error) {
-    console.log("Error fetching address:", error);
+    console.error("Error fetching address:", error);
     return [];
   }
 };
@@ -278,7 +278,7 @@ const getCategories = unstable_cache(
 
       return data ?? [];
     } catch (error) {
-      console.log("Error fetching categories with product count:", error);
+      console.error("Error fetching categories with product count:", error);
       return [];
     }
   },

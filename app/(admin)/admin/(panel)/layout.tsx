@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { isUserAdmin } from "@/lib/adminUtils";
+import { verifiedPrimaryEmail } from "@/lib/adminAuth";
 import { getStoreSettings } from "@/lib/storeSettings";
 import AdminShell from "@/components/admin/AdminShell";
 
@@ -16,7 +17,7 @@ export default async function AdminPanelLayout({
   if (!userId) redirect("/sign-in?redirect_url=/admin");
 
   const user = await currentUser();
-  const email = user?.primaryEmailAddress?.emailAddress;
+  const email = verifiedPrimaryEmail(user);
   if (!email || !isUserAdmin(email)) redirect("/admin/access-denied");
 
   const settings = await getStoreSettings();

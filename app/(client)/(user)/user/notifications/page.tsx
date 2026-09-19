@@ -92,7 +92,6 @@ export default function UserNotificationsPage() {
     if (user) {
       fetchNotifications();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Update displayed notifications when page changes

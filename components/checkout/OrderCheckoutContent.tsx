@@ -95,7 +95,6 @@ export function OrderCheckoutContent({
             <li key={i} className="flex items-center gap-4 py-3">
               <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-sand">
                 {item.product?.images?.[0] && (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={image(item.product.images[0]).size(160, 160).url()}
                     alt=""

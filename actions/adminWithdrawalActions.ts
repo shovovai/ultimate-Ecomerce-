@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { backendClient } from "@/sanity/lib/backendClient";
-import { isAdmin } from "@/lib/adminUtils";
+import { getAdminEmail } from "@/lib/adminAuth";
 
 /**
  * Admin: Get all pending withdrawal requests
@@ -33,13 +33,11 @@ export async function getAllWithdrawalRequests(): Promise<{
       return { success: false, message: "Unauthorized" };
     }
 
-    // Verify admin status - check both database field and environment variable
-    const adminUser = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId][0]{ email, isAdmin }`,
-      { clerkUserId }
-    );
+    // Admin rights come from Clerk (verified email), never from the Sanity user document
+    const adminEmail = await getAdminEmail();
+    const adminUser = { email: adminEmail ?? undefined };
 
-    if (!isAdmin(adminUser)) {
+    if (!adminEmail) {
       return {
         success: false,
         message: "Admin access required to view withdrawal requests",
@@ -101,13 +99,11 @@ export async function approveWithdrawal(
       return { success: false, message: "Unauthorized" };
     }
 
-    // Verify admin status - check both database field and environment variable
-    const adminUser = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId][0]{ email, isAdmin }`,
-      { clerkUserId }
-    );
+    // Admin rights come from Clerk (verified email), never from the Sanity user document
+    const adminEmail = await getAdminEmail();
+    const adminUser = { email: adminEmail ?? undefined };
 
-    if (!isAdmin(adminUser)) {
+    if (!adminEmail) {
       return {
         success: false,
         message: "Admin access required to approve withdrawals",
@@ -118,7 +114,9 @@ export async function approveWithdrawal(
     const user = await backendClient.fetch(
       `*[_type == "user" && clerkUserId == $userId][0]{ 
         _id, 
+        _rev,
         walletBalance, 
+        walletTransactions,
         withdrawalRequests
       }`,
       { userId }
@@ -143,22 +141,53 @@ export async function approveWithdrawal(
       };
     }
 
-    // Update withdrawal request status
+    // The money leaves the wallet when the request is approved
+    const amount = Number(request.amount);
+    const balance = Number(user.walletBalance) || 0;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, message: "Invalid withdrawal amount" };
+    }
+    if (balance < amount) {
+      return {
+        success: false,
+        message: `Insufficient wallet balance (${balance.toFixed(2)} available)`,
+      };
+    }
+
+    const now = new Date().toISOString();
     const updatedRequests = user.withdrawalRequests.map((r: any) =>
       r.id === requestId
         ? {
             ...r,
             status: "processing",
-            processedAt: new Date().toISOString(),
+            processedAt: now,
             processedBy: adminUser.email,
             transactionId: transactionId || "",
           }
         : r
     );
+    const debit = {
+      id: crypto.randomUUID(),
+      type: "debit_withdrawal",
+      amount,
+      balanceBefore: balance,
+      balanceAfter: balance - amount,
+      description: "Wallet withdrawal",
+      withdrawalRequestId: requestId,
+      processedBy: adminUser.email,
+      createdAt: now,
+      status: "completed",
+    };
 
+    // ifRevisionId: fails instead of double-spending if the wallet changed meanwhile
     await backendClient
       .patch(user._id)
-      .set({ withdrawalRequests: updatedRequests })
+      .ifRevisionId(user._rev)
+      .set({
+        withdrawalRequests: updatedRequests,
+        walletBalance: balance - amount,
+        walletTransactions: [debit, ...(user.walletTransactions || [])],
+      })
       .commit();
 
     return {
@@ -185,13 +214,11 @@ export async function completeWithdrawal(
       return { success: false, message: "Unauthorized" };
     }
 
-    // Verify admin status - check both database field and environment variable
-    const adminUser = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId][0]{ email, isAdmin }`,
-      { clerkUserId }
-    );
+    // Admin rights come from Clerk (verified email), never from the Sanity user document
+    const adminEmail = await getAdminEmail();
+    const adminUser = { email: adminEmail ?? undefined };
 
-    if (!isAdmin(adminUser)) {
+    if (!adminEmail) {
       return {
         success: false,
         message: "Admin access required to complete withdrawals",
@@ -268,13 +295,11 @@ export async function rejectWithdrawal(
       return { success: false, message: "Unauthorized" };
     }
 
-    // Verify admin status - check both database field and environment variable
-    const adminUser = await backendClient.fetch(
-      `*[_type == "user" && clerkUserId == $clerkUserId][0]{ email, isAdmin }`,
-      { clerkUserId }
-    );
+    // Admin rights come from Clerk (verified email), never from the Sanity user document
+    const adminEmail = await getAdminEmail();
+    const adminUser = { email: adminEmail ?? undefined };
 
-    if (!isAdmin(adminUser)) {
+    if (!adminEmail) {
       return {
         success: false,
         message: "Admin access required to reject withdrawals",

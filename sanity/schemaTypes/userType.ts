@@ -80,6 +80,12 @@ export const userType = defineType({
           initialValue: true,
         }),
         defineField({
+          name: "orderUpdates",
+          title: "Order Status Alerts",
+          type: "boolean",
+          initialValue: true,
+        }),
+        defineField({
           name: "smsNotifications",
           title: "SMS Notifications",
           type: "boolean",
